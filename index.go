@@ -14,8 +14,8 @@ import (
 )
 
 type responseData struct {
-	Transaction       [][]*TransactionDao `json:"transactionList"`
-	TransactionDetail [][]*TransactionDao `json:"TransactionDetail"`
+	Transaction       [][]*TransactionDao `json:"transaction"`
+	TransactionDetail [][]*TransactionDao `json:"transactionDetail"`
 }
 type responseJson struct {
 	Success bool         `json:"status"`
@@ -89,15 +89,14 @@ func main() {
 		ch1 := make(chan []*TransactionDao)
 
 		var wg sync.WaitGroup
-		var wg1 sync.WaitGroup
 
+		wg.Add(1)
 		go syncTransaction(ch, &wg, db)
-		go syncTransactionDetail(ch1, &wg1, db)
+		go syncTransactionDetail(ch1, &wg, db)
 
 		// close the channel in the background
 		go func() {
 			wg.Wait()
-			wg1.Wait()
 			close(ch)
 			close(ch1)
 		}()
@@ -110,14 +109,15 @@ func main() {
 			resTransaction = append(resTransaction, res)
 		}
 
-		// resData1 := make([]*TransactionDao, 0)
+		resTransactionDetail := make([][]*TransactionDao, 0)
 
-		// for res := range ch {
-		// 	resData = append(resData, res)
-		// }
+		for res := range ch {
+			resTransactionDetail = append(resTransactionDetail, res)
+		}
 
 		respData := &responseData{
-			Transaction: resTransaction,
+			Transaction:       resTransaction,
+			TransactionDetail: resTransactionDetail,
 		}
 
 		resp := &responseJson{}
