@@ -13,71 +13,66 @@ import (
 	_ "github.com/godror/godror"
 )
 
+type responseData struct {
+	Transaction       [][]*TransactionDao `json:"transactionList"`
+	TransactionDetail [][]*TransactionDao `json:"TransactionDetail"`
+}
 type responseJson struct {
-	Success bool                   `json:"status"`
-	Message string                 `json:"message"`
-	Data    [][]*TicketCategoryDao `json:"data"`
+	Success bool         `json:"status"`
+	Message string       `json:"message"`
+	Data    responseData `json:"data"`
 }
 
-type TicketCategoryDao struct {
-	TOTAL        int
-	TOTAL_COD    int
-	TOTAL_NONCOD int
+type TransactionDao struct {
+	AWB                 string
+	CREATED_DATE_SEARCH string
+	SHIPPER_NAME        string
 }
 
-func callApi(userId int, ch chan<- []*TicketCategoryDao, wg *sync.WaitGroup, db *sql.DB) {
+func syncTransaction(ch chan<- []*TransactionDao, wg *sync.WaitGroup, db *sql.DB) {
 	defer wg.Done()
 
-	ticketCategoryList := make([]*TicketCategoryDao, 0)
+	transactionList := make([]*TransactionDao, 0)
 
-	q, err := db.Query("SELECT COUNT(TTT.AWB) TOTAL, NVL(SUM(TTT.COD_FLAG),0) TOTAL_COD, NVL(COUNT(TTT.AWB) - SUM(TTT.COD_FLAG),0) TOTAL_NONCOD FROM T_TOTAL_TRANS TTT, TRANSACTION T WHERE TTT.AWB = T.AWB AND REGISTRATION_ID = '21100710222523'")
+	q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
+		"WHERE TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('2021-01-01', 'YYYY-MM-DD') " +
+		"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('2021-12-31','YYYY-MM-DD') AND ts.AWB != NULL ORDER BY t.CREATED_DATE_SEARCH ASC")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for q.Next() {
-		ticketCategory := new(TicketCategoryDao)
-		if err := q.Scan(&ticketCategory.TOTAL, &ticketCategory.TOTAL_COD, &ticketCategory.TOTAL_NONCOD); err != nil {
+		transaction := new(TransactionDao)
+		if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
 			log.Fatal(err)
 		}
-
-		ticketCategoryList = append(ticketCategoryList, ticketCategory)
-
+		transactionList = append(transactionList, transaction)
 	}
 
-	q, err = db.Query("SELECT COUNT(TMK.AWB) TOTAL, NVL(SUM(TMK.COD_FLAG),0) TOTAL_COD, NVL(COUNT(TMK.AWB) - SUM(TMK.COD_FLAG),0) TOTAL_NONCOD FROM T_MSH_KAMU TMK, TRANSACTION T WHERE TMK.AWB = T.AWB AND REGISTRATION_ID = '21100710222523'")
+	ch <- transactionList
+}
+
+func syncTransactionDetail(ch chan<- []*TransactionDao, wg *sync.WaitGroup, db *sql.DB) {
+	defer wg.Done()
+
+	transactionList := make([]*TransactionDao, 0)
+
+	q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
+		"WHERE TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('2021-01-01', 'YYYY-MM-DD') " +
+		"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('2021-12-31','YYYY-MM-DD') AND ts.AWB != NULL ORDER BY t.CREATED_DATE_SEARCH ASC")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for q.Next() {
-		ticketCategory := new(TicketCategoryDao)
-		if err := q.Scan(&ticketCategory.TOTAL, &ticketCategory.TOTAL_COD, &ticketCategory.TOTAL_NONCOD); err != nil {
+		transaction := new(TransactionDao)
+		if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
 			log.Fatal(err)
 		}
-
-		ticketCategoryList = append(ticketCategoryList, ticketCategory)
-
+		transactionList = append(transactionList, transaction)
 	}
 
-	q, err = db.Query("SELECT COUNT(TSJ.AWB) TOTAL, NVL(SUM(TSJ.COD_FLAG),0) TOTAL_COD, NVL(COUNT(TSJ.AWB) - SUM(TSJ.COD_FLAG),0) TOTAL_NONCOD FROM T_SDH_JEMPUT TSJ, TRANSACTION T WHERE TSJ.AWB = T.AWB AND REGISTRATION_ID = '21100710222523'")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for q.Next() {
-		ticketCategory := new(TicketCategoryDao)
-		if err := q.Scan(&ticketCategory.TOTAL, &ticketCategory.TOTAL_COD, &ticketCategory.TOTAL_NONCOD); err != nil {
-			log.Fatal(err)
-		}
-
-		ticketCategoryList = append(ticketCategoryList, ticketCategory)
-
-	}
-
-	fmt.Println(userId)
-
-	ch <- ticketCategoryList
+	ch <- transactionList
 }
 
 func main() {
@@ -90,31 +85,43 @@ func main() {
 		db, _ := sql.Open("godror", `user="jne" password="JNEmerdeka123!" connectString="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=34.101.218.194)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pdbdev)))"`)
 		db.SetMaxOpenConns(50)
 
-		ch := make(chan []*TicketCategoryDao)
+		ch := make(chan []*TransactionDao)
+		ch1 := make(chan []*TransactionDao)
 
 		var wg sync.WaitGroup
+		var wg1 sync.WaitGroup
 
-		for i := 0; i < 1; i++ {
-			wg.Add(1)
-			go callApi(i, ch, &wg, db)
-		}
+		go syncTransaction(ch, &wg, db)
+		go syncTransactionDetail(ch1, &wg1, db)
 
 		// close the channel in the background
 		go func() {
 			wg.Wait()
+			wg1.Wait()
 			close(ch)
+			close(ch1)
 		}()
 
 		// read from channel as they come in until its closed
 
-		resData := make([][]*TicketCategoryDao, 0)
+		resTransaction := make([][]*TransactionDao, 0)
 
 		for res := range ch {
-			resData = append(resData, res)
+			resTransaction = append(resTransaction, res)
+		}
+
+		// resData1 := make([]*TransactionDao, 0)
+
+		// for res := range ch {
+		// 	resData = append(resData, res)
+		// }
+
+		respData := &responseData{
+			Transaction: resTransaction,
 		}
 
 		resp := &responseJson{}
-		resp.Data = resData
+		resp.Data = *respData
 		resp.Message = "Hallo"
 		resp.Success = true
 
