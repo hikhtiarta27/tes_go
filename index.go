@@ -91,7 +91,10 @@ func main() {
 		var wg sync.WaitGroup
 
 		wg.Add(1)
-		go syncTransaction(ch, &wg, db)
+		go func() {
+			go syncTransaction(ch, &wg, db)
+		}()
+
 		wg.Add(1)
 		go syncTransactionDetail(ch1, &wg, db)
 
