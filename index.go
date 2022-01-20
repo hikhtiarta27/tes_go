@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -56,11 +57,11 @@ type responseJson struct {
 
 func main() {
 
-	db := dbConn()
-
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/synchronize", func(w http.ResponseWriter, r *http.Request) {
+
+		db, _ := sql.Open("godror", `user="jne" password="JNEmerdeka123!" connectString="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=34.101.218.194)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pdbdev)))"`)
 
 		stmt, err := db.Prepare("SELECT * FROM TICKET_CATEGORY")
 		if err != nil {
@@ -85,6 +86,13 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(resp)
 	})
-	http.ListenAndServe(":8085", r)
+
+	fmt.Println("Server started in 8085")
+
+	err := http.ListenAndServe(":8085", r)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }
