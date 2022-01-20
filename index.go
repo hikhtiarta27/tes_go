@@ -92,6 +92,7 @@ func main() {
 
 		wg.Add(1)
 		go syncTransaction(ch, &wg, db)
+		wg.Add(1)
 		go syncTransactionDetail(ch1, &wg, db)
 
 		// close the channel in the background
