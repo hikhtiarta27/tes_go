@@ -88,6 +88,7 @@ func main() {
 	r.Get("/synchronize", func(w http.ResponseWriter, r *http.Request) {
 
 		db, _ := sql.Open("godror", `user="jne" password="JNEmerdeka123!" connectString="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=34.101.218.194)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pdbdev)))"`)
+		db.SetMaxOpenConns(50)
 
 		ch := make(chan []*TicketCategoryDao)
 
