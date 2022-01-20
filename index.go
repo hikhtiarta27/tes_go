@@ -90,12 +90,8 @@ func main() {
 
 		var wg sync.WaitGroup
 
-		wg.Add(1)
-		go func() {
-			syncTransaction(ch, &wg, db)
-		}()
-
-		wg.Add(1)
+		wg.Add(2)
+		go syncTransaction(ch, &wg, db)
 		go syncTransactionDetail(ch1, &wg, db)
 
 		// close the channel in the background
