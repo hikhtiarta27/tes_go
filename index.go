@@ -92,7 +92,7 @@ func main() {
 
 		wg.Add(1)
 		go func() {
-			go syncTransaction(ch, &wg, db)
+			syncTransaction(ch, &wg, db)
 		}()
 
 		wg.Add(1)
