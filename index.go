@@ -50,9 +50,14 @@ func process() {
 }
 
 type responseJson struct {
-	Success bool   `json:"status"`
-	Message string `json:"message"`
-	Data    string `json:"data"`
+	Success bool                 `json:"status"`
+	Message string               `json:"message"`
+	Data    []*TicketCategoryDao `json:"data"`
+}
+
+type TicketCategoryDao struct {
+	ID          string
+	DESCRIPTION string
 }
 
 func main() {
@@ -61,24 +66,29 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Get("/synchronize", func(w http.ResponseWriter, r *http.Request) {
 
+		ticketCategoryList := make([]*TicketCategoryDao, 0)
+
 		db, _ := sql.Open("godror", `user="jne" password="JNEmerdeka123!" connectString="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=34.101.218.194)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pdbdev)))"`)
 
-		stmt, err := db.Prepare("SELECT * FROM TICKET_CATEGORY")
+		q, err := db.Query("SELECT CATEGORY_ID, CATEGORY_DESCRIPTION FROM TICKET_CATEGORY")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		res, err := stmt.Exec()
-		if err != nil {
-			log.Fatal(err)
-		}
+		for q.Next() {
+			ticketCategory := new(TicketCategoryDao)
+			if err := q.Scan(&ticketCategory.ID, &ticketCategory.DESCRIPTION); err != nil {
+				log.Fatal(err)
+			}
 
-		fmt.Println(res)
+			ticketCategoryList = append(ticketCategoryList, ticketCategory)
+
+		}
 
 		// process()
 
 		resp := &responseJson{}
-		resp.Data = "Hallo"
+		resp.Data = ticketCategoryList
 		resp.Message = "Hallo"
 		resp.Success = true
 
