@@ -90,8 +90,8 @@ func main() {
 
 		var wg sync.WaitGroup
 
-		wg.Add(1)
-		go syncTransaction(ch, &wg, db)
+		// wg.Add(1)
+		// go syncTransaction(ch, &wg, db)
 		wg.Add(1)
 		go syncTransactionDetail(ch1, &wg, db)
 
@@ -106,9 +106,9 @@ func main() {
 
 		resTransaction := make([][]*TransactionDao, 0)
 
-		for res := range ch {
-			resTransaction = append(resTransaction, res)
-		}
+		// for res := range ch {
+		// 	resTransaction = append(resTransaction, res)
+		// }
 
 		resTransactionDetail := make([][]*TransactionDao, 0)
 
