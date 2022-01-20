@@ -86,19 +86,19 @@ func main() {
 		db.SetMaxOpenConns(50)
 
 		ch := make(chan []*TransactionDao)
-		ch1 := make(chan []*TransactionDao)
+		// ch1 := make(chan []*TransactionDao)
 
 		var wg sync.WaitGroup
 
-		wg.Add(2)
+		wg.Add(1)
 		go syncTransaction(ch, &wg, db)
-		go syncTransactionDetail(ch1, &wg, db)
+		// go syncTransactionDetail(ch1, &wg, db)
 
 		// close the channel in the background
 		go func() {
 			wg.Wait()
 			close(ch)
-			close(ch1)
+			// close(ch1)
 		}()
 
 		// read from channel as they come in until its closed
@@ -111,9 +111,9 @@ func main() {
 
 		resTransactionDetail := make([][]*TransactionDao, 0)
 
-		for res := range ch {
-			resTransactionDetail = append(resTransactionDetail, res)
-		}
+		// for res := range ch1 {
+		// 	resTransactionDetail = append(resTransactionDetail, res)
+		// }
 
 		respData := &responseData{
 			Transaction:       resTransaction,
