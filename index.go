@@ -45,6 +45,36 @@ func callApi(userId int, ch chan<- []*TicketCategoryDao, wg *sync.WaitGroup, db 
 
 	}
 
+	q, err = db.Query("SELECT COUNT(TMK.AWB) TOTAL, NVL(SUM(TMK.COD_FLAG),0) TOTAL_COD, NVL(COUNT(TMK.AWB) - SUM(TMK.COD_FLAG),0) TOTAL_NONCOD FROM T_MSH_KAMU TMK, TRANSACTION T WHERE TMK.AWB = T.AWB AND REGISTRATION_ID = '21100710222523'")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for q.Next() {
+		ticketCategory := new(TicketCategoryDao)
+		if err := q.Scan(&ticketCategory.TOTAL, &ticketCategory.TOTAL_COD, &ticketCategory.TOTAL_NONCOD); err != nil {
+			log.Fatal(err)
+		}
+
+		ticketCategoryList = append(ticketCategoryList, ticketCategory)
+
+	}
+
+	q, err = db.Query("SELECT COUNT(TSJ.AWB) TOTAL, NVL(SUM(TSJ.COD_FLAG),0) TOTAL_COD, NVL(COUNT(TSJ.AWB) - SUM(TSJ.COD_FLAG),0) TOTAL_NONCOD FROM T_SDH_JEMPUT TSJ, TRANSACTION T WHERE TSJ.AWB = T.AWB AND REGISTRATION_ID = '21100710222523'")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for q.Next() {
+		ticketCategory := new(TicketCategoryDao)
+		if err := q.Scan(&ticketCategory.TOTAL, &ticketCategory.TOTAL_COD, &ticketCategory.TOTAL_NONCOD); err != nil {
+			log.Fatal(err)
+		}
+
+		ticketCategoryList = append(ticketCategoryList, ticketCategory)
+
+	}
+
 	fmt.Println(userId)
 
 	ch <- ticketCategoryList
@@ -63,7 +93,7 @@ func main() {
 
 		var wg sync.WaitGroup
 
-		for i := 0; i < 30; i++ {
+		for i := 0; i < 1; i++ {
 			wg.Add(1)
 			go callApi(i, ch, &wg, db)
 		}
