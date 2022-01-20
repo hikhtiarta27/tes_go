@@ -20,8 +20,9 @@ type responseJson struct {
 }
 
 type TicketCategoryDao struct {
-	ID          string
-	DESCRIPTION string
+	TOTAL        int
+	TOTAL_COD    int
+	TOTAL_NONCOD int
 }
 
 func callApi(userId int, ch chan<- []*TicketCategoryDao, wg *sync.WaitGroup, db *sql.DB) {
@@ -29,14 +30,14 @@ func callApi(userId int, ch chan<- []*TicketCategoryDao, wg *sync.WaitGroup, db 
 
 	ticketCategoryList := make([]*TicketCategoryDao, 0)
 
-	q, err := db.Query("SELECT CATEGORY_ID, CATEGORY_DESCRIPTION FROM TICKET_CATEGORY")
+	q, err := db.Query("SELECT COUNT(TTT.AWB) TOTAL, NVL(SUM(TTT.COD_FLAG),0) TOTAL_COD, NVL(COUNT(TTT.AWB) - SUM(TTT.COD_FLAG),0) TOTAL_NONCOD FROM T_TOTAL_TRANS TTT, TRANSACTION T WHERE TTT.AWB = T.AWB AND REGISTRATION_ID = '21100710222523'")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for q.Next() {
 		ticketCategory := new(TicketCategoryDao)
-		if err := q.Scan(&ticketCategory.ID, &ticketCategory.DESCRIPTION); err != nil {
+		if err := q.Scan(&ticketCategory.TOTAL, &ticketCategory.TOTAL_COD, &ticketCategory.TOTAL_NONCOD); err != nil {
 			log.Fatal(err)
 		}
 
@@ -53,38 +54,6 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Get("/tmp", func(w http.ResponseWriter, r *http.Request) {
-
-		// ticketCategoryList := make([]*TicketCategoryDao, 0)
-
-		db, _ := sql.Open("godror", `user="jne" password="JNEmerdeka123!" connectString="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=34.101.218.194)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pdbdev)))"`)
-
-		q, err := db.Query("SELECT CATEGORY_ID, CATEGORY_DESCRIPTION FROM TICKET_CATEGORY")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		for q.Next() {
-			ticketCategory := new(TicketCategoryDao)
-			if err := q.Scan(&ticketCategory.ID, &ticketCategory.DESCRIPTION); err != nil {
-				log.Fatal(err)
-			}
-
-			// ticketCategoryList = append(ticketCategoryList, ticketCategory)
-
-		}
-
-		// process()
-
-		resp := &responseJson{}
-		// resp.Data = ticketCategoryList
-		resp.Message = "Hallo"
-		resp.Success = true
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(resp)
-	})
 
 	r.Get("/synchronize", func(w http.ResponseWriter, r *http.Request) {
 
