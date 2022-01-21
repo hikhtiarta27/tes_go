@@ -611,7 +611,7 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 		"WHERE ts.AWB IS NULL " +
 		"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('2021-11-21', 'YYYY-MM-DD') " +
 		"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('2022-01-21', 'YYYY-MM-DD') " +
-		"ORDER BY t.CREATED_DATE_SEARCH ASC")
+		"ORDER BY t.CREATED_DATE_SEARCH ASC OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;")
 
 	if err != nil {
 		log.Fatal(err)
@@ -640,17 +640,17 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 		json.NewDecoder(resp.Body).Decode(&awb)
 
-		procedureSql := reconstruct(&awb)
+		// procedureSql := reconstruct(&awb)
 
 		fmt.Println(total)
 
-		_, err = db.Exec(procedureSql)
+		// _, err = db.Exec(procedureSql)
 
 		total++
-		if err != nil {
-			failed++
-			log.Fatal(err)
-		}
+		// if err != nil {
+		// 	failed++
+		// 	log.Fatal(err)
+		// }
 
 		success++
 	}
@@ -675,7 +675,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 		"WHERE t.AWB IS NULL AND ts.AWB IS NULL " +
 		"AND TRUNC(td.AWB_DATE) >= TO_DATE('2021-11-21', 'YYYY-MM-DD') " +
 		"AND TRUNC(td.AWB_DATE) <= TO_DATE('2022-01-21', 'YYYY-MM-DD') " +
-		"ORDER BY td.AWB_DATE")
+		"ORDER BY td.AWB_DATE OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -703,18 +703,18 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 		json.NewDecoder(resp.Body).Decode(&awb)
 
-		procedureSql := reconstruct(&awb)
+		// procedureSql := reconstruct(&awb)
 
 		fmt.Println(total)
 
-		_, err = db.Exec(procedureSql)
+		// _, err = db.Exec(procedureSql)
 
 		total++
 
-		if err != nil {
-			failed++
-			log.Fatal(err)
-		}
+		// if err != nil {
+		// 	failed++
+		// 	log.Fatal(err)
+		// }
 
 		success++
 	}
