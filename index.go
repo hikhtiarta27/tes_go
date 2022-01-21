@@ -642,6 +642,7 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 		procedureSql := reconstruct(&awb)
 		if total == 0 {
+			fmt.Println("Transaction")
 			fmt.Println(procedureSql)
 		}
 
@@ -709,6 +710,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 		procedureSql := reconstruct(&awb)
 
 		if total == 0 {
+			fmt.Println("Transaction Detail")
 			fmt.Println(procedureSql)
 		}
 
