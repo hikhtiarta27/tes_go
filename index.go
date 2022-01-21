@@ -641,23 +641,21 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 		json.NewDecoder(resp.Body).Decode(&awb)
 
 		if awb.CNOTE_NO != "" {
-			fmt.Println("Transaction")
-			fmt.Println(total)
+
+			procedureSql := reconstruct(&awb)
+			_, err = db.Exec(procedureSql)
+			success++
+
+			if err != nil {
+				failed++
+				log.Fatal(err)
+
+			}
+		} else {
+			failed++
 		}
 
-		// procedureSql := reconstruct(&awb)
-
-		// fmt.Println(procedureSql)
-
-		// _, err = db.Exec(procedureSql)
-
 		total++
-		// if err != nil {
-		// 	failed++
-		// 	log.Fatal(err)
-		// }
-
-		success++
 	}
 
 	ch <- transactionObj
@@ -708,25 +706,22 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 		json.NewDecoder(resp.Body).Decode(&awb)
 
-		// fmt.Println(awb)
+		if awb.CNOTE_NO != "" {
 
-		// procedureSql := reconstruct(&awb)
+			procedureSql := reconstruct(&awb)
+			_, err = db.Exec(procedureSql)
+			success++
 
-		fmt.Println("Transaction Detail")
-		// fmt.Println(procedureSql)
+			if err != nil {
+				failed++
+				log.Fatal(err)
 
-		fmt.Println(total)
-
-		// _, err = db.Exec(procedureSql)
+			}
+		} else {
+			failed++
+		}
 
 		total++
-
-		// if err != nil {
-		// 	failed++
-		// 	log.Fatal(err)
-		// }
-
-		success++
 	}
 
 	ch <- transactionDetailObj
