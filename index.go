@@ -633,7 +633,7 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 		if err != nil {
 			failed++
-			continue
+			log.Fatal(err)
 		}
 
 		awb := AWBDetail{}
@@ -642,12 +642,14 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 		procedureSql := reconstruct(&awb)
 
+		fmt.Println(total)
+
 		_, err = db.Exec(procedureSql)
 
 		total++
 		if err != nil {
 			failed++
-			continue
+			log.Fatal(err)
 		}
 
 		success++
@@ -694,7 +696,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 		if err != nil {
 			failed++
-			continue
+			log.Fatal(err)
 		}
 
 		awb := AWBDetail{}
@@ -703,13 +705,15 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 		procedureSql := reconstruct(&awb)
 
+		fmt.Println(total)
+
 		_, err = db.Exec(procedureSql)
 
 		total++
 
 		if err != nil {
 			failed++
-			continue
+			log.Fatal(err)
 		}
 
 		success++
