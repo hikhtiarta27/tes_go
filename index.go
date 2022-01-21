@@ -596,10 +596,12 @@ func reconstruct(awb *AWBDetail) string {
 	return sql
 }
 
-func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
-	defer wg.Done()
+func syncTransaction(db *sql.DB) map[string]int {
 
 	total, success, failed := 0, 0, 0
+
+	ch := make(chan map[string]int)
+	var wg sync.WaitGroup
 
 	transactionObj := map[string]int{
 		"total":   total,
@@ -618,50 +620,68 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 	}
 
 	for q.Next() {
-		transaction := new(TransactionDao)
-		if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
-			log.Fatal(err)
-		}
 
-		url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
-		payload, _ := json.Marshal(
-			map[string]string{
-				"cnote": transaction.AWB,
-			})
+		defer wg.Done()
 
-		resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+		wg.Add(1)
 
-		if err != nil {
-			failed++
-			log.Fatal(err)
-		}
+		go func(q *sql.Rows) {
+			transaction := new(TransactionDao)
+			if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
+				log.Fatal(err)
+			}
 
-		awb := AWBDetail{}
+			url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
+			payload, _ := json.Marshal(
+				map[string]string{
+					"cnote": transaction.AWB,
+				})
 
-		json.NewDecoder(resp.Body).Decode(&awb)
+			resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 
-		// procedureSql := reconstruct(&awb)
+			if err != nil {
+				failed++
+				log.Fatal(err)
+			}
 
-		fmt.Println(total)
+			awb := AWBDetail{}
 
-		// _, err = db.Exec(procedureSql)
+			json.NewDecoder(resp.Body).Decode(&awb)
 
-		total++
-		// if err != nil {
-		// 	failed++
-		// 	log.Fatal(err)
-		// }
+			// procedureSql := reconstruct(&awb)
 
-		success++
+			fmt.Println(total)
+
+			// _, err = db.Exec(procedureSql)
+
+			total++
+			// if err != nil {
+			// 	failed++
+			// 	log.Fatal(err)
+			// }
+
+			success++
+		}(q)
 	}
 
-	ch <- transactionObj
+	wg.Wait()
+	close(ch)
+
+	// close the channel in the background
+	// go func() {
+	// 	wg.Wait()
+	// 	close(ch)
+	// }()
+
+	return transactionObj
 }
 
-func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
-	defer wg.Done()
+func syncTransactionDetail(db *sql.DB) map[string]int {
 
 	total, success, failed := 0, 0, 0
+
+	ch := make(chan map[string]int)
+	var wg sync.WaitGroup
 
 	transactionDetailObj := map[string]int{
 		"total":   total,
@@ -681,45 +701,60 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 	}
 
 	for q.Next() {
-		transaction := new(TransactionDao)
-		if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
-			log.Fatal(err)
-		}
+		wg.Add(1)
 
-		url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
-		payload, _ := json.Marshal(
-			map[string]string{
-				"cnote": transaction.AWB,
-			})
+		go func(q *sql.Rows) {
+			defer wg.Done()
 
-		resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+			transaction := new(TransactionDao)
+			if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
+				log.Fatal(err)
+			}
 
-		if err != nil {
-			failed++
-			log.Fatal(err)
-		}
+			url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
+			payload, _ := json.Marshal(
+				map[string]string{
+					"cnote": transaction.AWB,
+				})
 
-		awb := AWBDetail{}
+			resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 
-		json.NewDecoder(resp.Body).Decode(&awb)
+			if err != nil {
+				failed++
+				log.Fatal(err)
+			}
 
-		// procedureSql := reconstruct(&awb)
+			awb := AWBDetail{}
 
-		fmt.Println(total)
+			json.NewDecoder(resp.Body).Decode(&awb)
 
-		// _, err = db.Exec(procedureSql)
+			// procedureSql := reconstruct(&awb)
 
-		total++
+			fmt.Println(total)
 
-		// if err != nil {
-		// 	failed++
-		// 	log.Fatal(err)
-		// }
+			// _, err = db.Exec(procedureSql)
 
-		success++
+			total++
+
+			// if err != nil {
+			// 	failed++
+			// 	log.Fatal(err)
+			// }
+
+			success++
+		}(q)
 	}
 
-	ch <- transactionDetailObj
+	wg.Wait()
+	close(ch)
+
+	// close the channel in the background
+	// go func() {
+	// 	wg.Wait()
+	// 	close(ch)
+	// }()
+
+	return transactionDetailObj
 }
 
 func main() {
@@ -732,24 +767,8 @@ func main() {
 		db, _ := sql.Open("godror", `user="jne" password="JNEmerdeka123!" connectString="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=34.101.218.194)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pdbprod)))"`)
 		db.SetMaxOpenConns(50)
 
-		ch := make(chan map[string]int)
-		ch1 := make(chan map[string]int)
-
-		var wg sync.WaitGroup
-
-		wg.Add(2)
-		go syncTransaction(ch, &wg, db)
-		go syncTransactionDetail(ch1, &wg, db)
-
-		// close the channel in the background
-		go func() {
-			wg.Wait()
-			close(ch)
-			close(ch1)
-		}()
-
-		resTransaction := <-ch
-		resTransactionDetail := <-ch1
+		resTransaction := syncTransaction(db)
+		resTransactionDetail := syncTransactionDetail(db)
 
 		respData := &responseData{
 			Transaction:       resTransaction,
