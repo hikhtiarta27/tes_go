@@ -315,7 +315,7 @@ type AWBDetail struct {
 }
 
 func reconstruct(awb *AWBDetail) string {
-	re, err := regexp.Compile(`[^\w]`)
+	re, err := regexp.Compile(`['"]`)
 	if err != nil {
 		log.Fatal(err)
 	}
