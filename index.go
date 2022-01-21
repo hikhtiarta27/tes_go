@@ -15,7 +15,7 @@ import (
 )
 
 type responseData struct {
-	Transaction       []*TransactionDao `json:"transaction"`
+	Transaction       map[string]int    `json:"transaction"`
 	TransactionDetail []*TransactionDao `json:"transactionDetail"`
 }
 type responseJson struct {
@@ -596,7 +596,58 @@ func reconstruct(awb *AWBDetail) string {
 	return sql
 }
 
-func syncTransaction(ch chan<- []*TransactionDao, wg *sync.WaitGroup, db *sql.DB) {
+func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
+	defer wg.Done()
+
+	total, success, failed := 0, 0, 0
+
+	transactionObj := map[string]int{
+		"total":   total,
+		"success": success,
+		"failed":  failed,
+	}
+
+	q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
+		"WHERE ts.AWB != NULL ORDER BY t.CREATED_DATE_SEARCH ASC")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for q.Next() {
+		transaction := new(TransactionDao)
+		if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
+			log.Fatal(err)
+		}
+
+		url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
+		payload, _ := json.Marshal(
+			map[string]string{
+				"cnote": transaction.AWB,
+			})
+
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		awb := AWBDetail{}
+
+		json.NewDecoder(resp.Body).Decode(&awb)
+
+		procedureSql := reconstruct(&awb)
+
+		fmt.Println(procedureSql)
+
+		total++
+		success++
+	}
+
+	ch <- transactionObj
+}
+
+func syncTransactionDetail(ch chan<- []*TransactionDao, wg *sync.WaitGroup, db *sql.DB) {
 	defer wg.Done()
 
 	transactionList := make([]*TransactionDao, 0)
@@ -609,57 +660,12 @@ func syncTransaction(ch chan<- []*TransactionDao, wg *sync.WaitGroup, db *sql.DB
 	// }
 
 	// for q.Next() {
-	transaction := new(TransactionDao)
-	transaction.AWB = "CSS5321000017413"
-	// if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
-	// 	log.Fatal(err)
+	// 	transaction := new(TransactionDao)
+	// 	if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	transactionList = append(transactionList, transaction)
 	// }
-
-	url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
-	payload, _ := json.Marshal(
-		map[string]string{
-			"cnote": transaction.AWB,
-		})
-
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	awb := AWBDetail{}
-
-	json.NewDecoder(resp.Body).Decode(&awb)
-
-	procedureSql := reconstruct(&awb)
-
-	fmt.Println(procedureSql)
-
-	transactionList = append(transactionList, transaction)
-	// }
-
-	ch <- transactionList
-}
-
-func syncTransactionDetail(ch chan<- []*TransactionDao, wg *sync.WaitGroup, db *sql.DB) {
-	defer wg.Done()
-
-	transactionList := make([]*TransactionDao, 0)
-
-	q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
-		"WHERE TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('2021-01-01', 'YYYY-MM-DD') " +
-		"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('2021-12-31','YYYY-MM-DD') AND ts.AWB != NULL ORDER BY t.CREATED_DATE_SEARCH ASC")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for q.Next() {
-		transaction := new(TransactionDao)
-		if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
-			log.Fatal(err)
-		}
-		transactionList = append(transactionList, transaction)
-	}
 
 	ch <- transactionList
 }
@@ -671,10 +677,10 @@ func main() {
 
 	r.Get("/synchronize", func(w http.ResponseWriter, r *http.Request) {
 
-		db, _ := sql.Open("godror", `user="jne" password="JNEmerdeka123!" connectString="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=34.101.218.194)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pdbdev)))"`)
+		db, _ := sql.Open("godror", `user="jne" password="JNEmerdeka123!" connectString="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=34.101.218.194)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pdbprod)))"`)
 		db.SetMaxOpenConns(50)
 
-		ch := make(chan []*TransactionDao)
+		ch := make(chan map[string]int)
 		ch1 := make(chan []*TransactionDao)
 
 		var wg sync.WaitGroup
