@@ -609,7 +609,7 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 	q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
 		"WHERE ts.AWB IS NULL " +
-		"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('2022-01-01', 'YYYY-MM-DD') " +
+		"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('2021-11-21', 'YYYY-MM-DD') " +
 		"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('2022-01-21', 'YYYY-MM-DD') " +
 		"ORDER BY t.CREATED_DATE_SEARCH ASC")
 
@@ -632,7 +632,8 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 		resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 
 		if err != nil {
-			log.Fatal(err)
+			failed++
+			continue
 		}
 
 		awb := AWBDetail{}
@@ -641,9 +642,14 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 		procedureSql := reconstruct(&awb)
 
-		fmt.Println(procedureSql)
+		_, err = db.Exec(procedureSql)
 
 		total++
+		if err != nil {
+			failed++
+			continue
+		}
+
 		success++
 	}
 
@@ -665,13 +671,9 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 		"LEFT JOIN \"TRANSACTION\" t ON td.AWB_NO = t.AWB " +
 		"LEFT JOIN T_SUKSES_TERIMA ts ON td.AWB_NO = ts.AWB " +
 		"WHERE t.AWB IS NULL AND ts.AWB IS NULL " +
-		"AND TRUNC(td.AWB_DATE) >= TO_DATE('2022-01-01', 'YYYY-MM-DD') " +
+		"AND TRUNC(td.AWB_DATE) >= TO_DATE('2021-11-21', 'YYYY-MM-DD') " +
 		"AND TRUNC(td.AWB_DATE) <= TO_DATE('2022-01-21', 'YYYY-MM-DD') " +
 		"ORDER BY td.AWB_DATE")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -691,7 +693,8 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 		resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 
 		if err != nil {
-			log.Fatal(err)
+			failed++
+			continue
 		}
 
 		awb := AWBDetail{}
@@ -700,9 +703,15 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 		procedureSql := reconstruct(&awb)
 
-		fmt.Println(procedureSql)
+		_, err = db.Exec(procedureSql)
 
 		total++
+
+		if err != nil {
+			failed++
+			continue
+		}
+
 		success++
 	}
 
