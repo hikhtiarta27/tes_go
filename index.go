@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -606,10 +607,13 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 	total, success, failed := 0, 0, 0
 
+	today := time.Now()
+	last3Month := today.AddDate(0, -3, 0)
+
 	q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
 		"WHERE ts.AWB IS NULL " +
-		"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('2021-11-21', 'YYYY-MM-DD') " +
-		"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('2022-01-21', 'YYYY-MM-DD') ")
+		"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('" + last3Month.Format("2006-01-02") + "', 'YYYY-MM-DD') " +
+		"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('" + today.Format("2006-01-02") + "', 'YYYY-MM-DD') ")
 
 	if err != nil {
 		log.Fatal(err)
@@ -670,12 +674,15 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 	total, success, failed := 0, 0, 0
 
+	today := time.Now()
+	last3Month := today.AddDate(0, -3, 0)
+
 	q, err := db.Query("SELECT td.AWB_NO, td.AWB_DATE, td.CUST_NAME FROM TRANSACTION_DETAIL td " +
 		"LEFT JOIN \"TRANSACTION\" t ON td.AWB_NO = t.AWB " +
 		"LEFT JOIN T_SUKSES_TERIMA ts ON td.AWB_NO = ts.AWB " +
 		"WHERE t.AWB IS NULL AND ts.AWB IS NULL " +
-		"AND TRUNC(td.AWB_DATE) >= TO_DATE('2021-11-21', 'YYYY-MM-DD') " +
-		"AND TRUNC(td.AWB_DATE) <= TO_DATE('2022-01-21', 'YYYY-MM-DD') ")
+		"AND TRUNC(td.AWB_DATE) >= TO_DATE('" + last3Month.Format("2006-01-02") + "', 'YYYY-MM-DD') " +
+		"AND TRUNC(td.AWB_DATE) <= TO_DATE('" + today.Format("2006-01-02") + "', 'YYYY-MM-DD') ")
 	if err != nil {
 		log.Fatal(err)
 	}
