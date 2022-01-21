@@ -640,7 +640,7 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 		json.NewDecoder(resp.Body).Decode(&awb)
 
-		fmt.Println(awb)
+		fmt.Println(resp.Body)
 
 		// procedureSql := reconstruct(&awb)
 
