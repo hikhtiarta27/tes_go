@@ -640,10 +640,12 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 		json.NewDecoder(resp.Body).Decode(&awb)
 
-		procedureSql := reconstruct(&awb)
+		fmt.Println(awb)
+
+		// procedureSql := reconstruct(&awb)
 
 		fmt.Println("Transaction")
-		fmt.Println(procedureSql)
+		// fmt.Println(procedureSql)
 		fmt.Println(total)
 
 		// _, err = db.Exec(procedureSql)
@@ -705,10 +707,12 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 		json.NewDecoder(resp.Body).Decode(&awb)
 
-		procedureSql := reconstruct(&awb)
+		fmt.Println(awb)
+
+		// procedureSql := reconstruct(&awb)
 
 		fmt.Println("Transaction Detail")
-		fmt.Println(procedureSql)
+		// fmt.Println(procedureSql)
 
 		fmt.Println(total)
 
