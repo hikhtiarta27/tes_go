@@ -642,15 +642,15 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 
 		procedureSql := reconstruct(&awb)
 
-		fmt.Println(procedureSql)
+		fmt.Println(total)
 
-		// _, err = db.Exec(procedureSql)
+		_, err = db.Exec(procedureSql)
 
 		total++
-		// if err != nil {
-		// 	failed++
-		// 	log.Fatal(err)
-		// }
+		if err != nil {
+			failed++
+			log.Fatal(err)
+		}
 
 		success++
 	}
@@ -705,16 +705,16 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 		procedureSql := reconstruct(&awb)
 
-		fmt.Println(procedureSql)
+		fmt.Println(total)
 
-		// _, err = db.Exec(procedureSql)
+		_, err = db.Exec(procedureSql)
 
 		total++
 
-		// if err != nil {
-		// 	failed++
-		// 	log.Fatal(err)
-		// }
+		if err != nil {
+			failed++
+			log.Fatal(err)
+		}
 
 		success++
 	}
