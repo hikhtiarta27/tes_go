@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"sync"
 
 	"github.com/go-chi/chi/v5"
@@ -314,285 +315,289 @@ type AWBDetail struct {
 }
 
 func reconstruct(awb *AWBDetail) string {
+	re, err := regexp.Compile(`[^\w]`)
+	if err != nil {
+		log.Fatal(err)
+	}
 	sql := "CALL P_DWH_SYNC_CS3_API('" + awb.CNOTE_NO + "'" +
 		",TO_DATE('" + awb.CNOTE_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
 		",TO_DATE('" + awb.CNOTE_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.CNOTE_BRANCH_ID + "'" +
-		",'" + awb.BRANCH_REGION + "'" +
-		",'" + awb.CNOTE_ORIGIN + "'" +
-		",'" + awb.ORIGIN_NAME + "'" +
-		",'" + awb.ORIGIN_ZONE + "'" +
-		",'" + awb.CNOTE_CUST_NO + "'" +
-		",'" + awb.CNOTE_CUST_TYPE + "'" +
-		",'" + awb.CUST_NAME + "'" +
-		",'" + awb.CUST_ADDR1 + "'" +
-		",'" + awb.CUST_ADDR2 + "'" +
-		",'" + awb.CUST_ADDR3 + "'" +
-		",'" + awb.CUST_PHONE + "'" +
-		",'" + awb.CUST_ZIP + "'" +
-		",'" + awb.CUST_NA + "'" +
-		",'" + awb.MARKETPLACE_TYPE + "'" +
-		",'" + awb.MARKETPLACE_NAME + "'" +
-		",'" + awb.CNOTE_SHIPPER_NAME + "'" +
-		",'" + awb.CNOTE_SHIPPER_CONTACT + "'" +
-		",'" + awb.CNOTE_SHIPPER_ADDR1 + "'" +
-		",'" + awb.CNOTE_SHIPPER_ADDR2 + "'" +
-		",'" + awb.CNOTE_SHIPPER_ADDR3 + "'" +
-		",'" + awb.CNOTE_SHIPPER_PHONE + "'" +
-		",'" + awb.CNOTE_SHIPPER_ZIP + "'" +
-		",'" + awb.CNOTE_RECEIVER_NAME + "'" +
-		",'" + awb.CNOTE_RECEIVER_CONTACT + "'" +
-		",'" + awb.CNOTE_RECEIVER_ADDR1 + "'" +
-		",'" + awb.CNOTE_RECEIVER_ADDR2 + "'" +
-		",'" + awb.CNOTE_RECEIVER_ADDR3 + "'" +
-		",'" + awb.CNOTE_RECEIVER_PHONE + "'" +
-		",'" + awb.CNOTE_RECEIVER_ZIP + "'" +
-		",'" + awb.CNOTE_DESTINATION_ID + "'" +
-		",'" + awb.BRANCH_DEST_REGION + "'" +
-		",'" + awb.BRANCH_DESTINATION + "'" +
-		",'" + awb.CNOTE_DESTINATION + "'" +
-		",'" + awb.DESTINATION_NAME + "'" +
-		",'" + awb.DESTINATION_CODE + "'" +
-		",'" + awb.DESTINATION_ZONE + "'" +
-		",'" + awb.CNOTE_SERVICES_CODE + "'" +
-		",'" + awb.ROUTE_ETD_FROM + "'" +
-		",'" + awb.ROUTE_ETD_THRU + "'" +
-		",'" + awb.CNOTE_SHIPMENT_TYPE + "'" +
-		",'" + awb.CNOTE_TRX_TYPE + "'" +
-		",'" + awb.CNOTE_PAYMENT_TYPE + "'" +
-		",'" + awb.CNOTE_QTY + "'" +
-		",'" + awb.CNOTE_WEIGHT + "'" +
-		",'" + awb.CNOTE_DIM + "'" +
-		",'" + awb.CNOTE_GOODS_TYPE + "'" +
-		",'" + awb.CNOTE_PACKING + "'" +
-		",'" + awb.CNOTE_GOODS_DESCR + "'" +
-		",'" + awb.CNOTE_GOODS_VALUE + "'" +
-		",'" + awb.CNOTE_SPECIAL_INS + "'" +
-		",'" + awb.CNOTE_INSURANCE_ID + "'" +
-		",'" + awb.CNOTE_INSURANCE_VALUE + "'" +
-		",'" + awb.CNOTE_AMOUNT + "'" +
-		",'" + awb.CNOTE_ADDITIONAL_FEE + "'" +
-		",'" + awb.CNOTE_COD + "'" +
-		",'" + awb.COD_NO + "'" +
-		",'" + awb.COD_GOODS_AMOUNT + "'" +
-		",'" + awb.COD_AMOUNT + "'" +
-		",'" + awb.CNOTE_CASHLESS + "'" +
-		",'" + awb.JLC_NO + "'" +
-		",'" + awb.JLC_NAME + "'" +
-		",'" + awb.JLC_DISCOUNT + "'" +
-		",'" + awb.HYBRID_BRANCH + "'" +
-		",'" + awb.HYBRID_CUST_NO + "'" +
-		",'" + awb.HYBRID_CUST_NAME + "'" +
-		",'" + awb.HYBRID_CUST_ADDR1 + "'" +
-		",'" + awb.HYBRID_CUST_ADDR2 + "'" +
-		",'" + awb.HYBRID_CUST_ADDR3 + "'" +
-		",'" + awb.HYBRID_CUST_PHONE + "'" +
-		",'" + awb.HYBRID_CUST_ZIP + "'" +
-		",'" + awb.CNOTE_CANCEL + "'" +
-		",'" + awb.CNOTE_HOLD + "'" +
-		",'" + awb.CNOTE_USER + "'" +
-		",'" + awb.CNOTE_USER_ZONE + "'" +
-		",'" + awb.R_CNOTE_FREIGHT_CHARGE + "'" +
-		",'" + awb.PUBLISH_RATE + "'" +
-		",'" + awb.CASHREG_NO + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_BRANCH_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.BRANCH_REGION, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_ORIGIN, "") + "'" +
+		",'" + re.ReplaceAllString(awb.ORIGIN_NAME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.ORIGIN_ZONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_CUST_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_CUST_TYPE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CUST_NAME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CUST_ADDR1, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CUST_ADDR2, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CUST_ADDR3, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CUST_PHONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CUST_ZIP, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CUST_NA, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MARKETPLACE_TYPE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MARKETPLACE_NAME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SHIPPER_NAME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SHIPPER_CONTACT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SHIPPER_ADDR1, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SHIPPER_ADDR2, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SHIPPER_ADDR3, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SHIPPER_PHONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SHIPPER_ZIP, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_RECEIVER_NAME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_RECEIVER_CONTACT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_RECEIVER_ADDR1, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_RECEIVER_ADDR2, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_RECEIVER_ADDR3, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_RECEIVER_PHONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_RECEIVER_ZIP, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_DESTINATION_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.BRANCH_DEST_REGION, "") + "'" +
+		",'" + re.ReplaceAllString(awb.BRANCH_DESTINATION, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_DESTINATION, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DESTINATION_NAME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DESTINATION_CODE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DESTINATION_ZONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SERVICES_CODE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.ROUTE_ETD_FROM, "") + "'" +
+		",'" + re.ReplaceAllString(awb.ROUTE_ETD_THRU, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SHIPMENT_TYPE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_TRX_TYPE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_PAYMENT_TYPE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_QTY, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_WEIGHT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_DIM, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_GOODS_TYPE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_PACKING, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_GOODS_DESCR, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_GOODS_VALUE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_SPECIAL_INS, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_INSURANCE_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_INSURANCE_VALUE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_AMOUNT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_ADDITIONAL_FEE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_COD, "") + "'" +
+		",'" + re.ReplaceAllString(awb.COD_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.COD_GOODS_AMOUNT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.COD_AMOUNT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_CASHLESS, "") + "'" +
+		",'" + re.ReplaceAllString(awb.JLC_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.JLC_NAME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.JLC_DISCOUNT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.HYBRID_BRANCH, "") + "'" +
+		",'" + re.ReplaceAllString(awb.HYBRID_CUST_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.HYBRID_CUST_NAME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.HYBRID_CUST_ADDR1, "") + "'" +
+		",'" + re.ReplaceAllString(awb.HYBRID_CUST_ADDR2, "") + "'" +
+		",'" + re.ReplaceAllString(awb.HYBRID_CUST_ADDR3, "") + "'" +
+		",'" + re.ReplaceAllString(awb.HYBRID_CUST_PHONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.HYBRID_CUST_ZIP, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_CANCEL, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_HOLD, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_USER, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_USER_ZONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.R_CNOTE_FREIGHT_CHARGE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PUBLISH_RATE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CASHREG_NO, "") + "'" +
 		",TO_DATE('" + awb.CASHREG_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.CASHREG_USER_ID + "'" +
-		",'" + awb.CASHREG_USER_ZONE + "'" +
+		",'" + re.ReplaceAllString(awb.CASHREG_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CASHREG_USER_ZONE, "") + "'" +
 		",TO_DATE('" + awb.CASHREG_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.PICKUP_NO + "'" +
-		",'" + awb.PICKUP_COURIER_ID + "'" +
-		",'" + awb.PICKUP_COURIER_ZONE + "'" +
+		",'" + re.ReplaceAllString(awb.PICKUP_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PICKUP_COURIER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PICKUP_COURIER_ZONE, "") + "'" +
 		",TO_DATE('" + awb.PICKUP_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
 		",TO_DATE('" + awb.PICKUP_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.PICKUP_MERCHAN_ID + "'" +
-		",'" + awb.PICKUP_LATITUDE + "'" +
-		",'" + awb.PICKUP_LONGITUDE + "'" +
-		",'" + awb.PU_FIRST_ATTTEMP_STATUS_CODE + "'" +
-		",'" + awb.PU_FIRST_ATTTEMP_STATUS_DESC + "'" +
+		",'" + re.ReplaceAllString(awb.PICKUP_MERCHAN_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PICKUP_LATITUDE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PICKUP_LONGITUDE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PU_FIRST_ATTTEMP_STATUS_CODE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PU_FIRST_ATTTEMP_STATUS_DESC, "") + "'" +
 		",TO_DATE('" + awb.PU_FIRST_ATTTEMP_STATUS_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.PU_LAST_ATTEMP_STATUS_CODE + "'" +
-		",'" + awb.PU_LAST_ATTEMP_STATUS_DESC + "'" +
+		",'" + re.ReplaceAllString(awb.PU_LAST_ATTEMP_STATUS_CODE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PU_LAST_ATTEMP_STATUS_DESC, "") + "'" +
 		",TO_DATE('" + awb.PU_LAST_ATTEMP_STATUS_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.PU_REF_ID + "'" +
-		",'" + awb.HO_NO + "'" +
+		",'" + re.ReplaceAllString(awb.PU_REF_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.HO_NO, "") + "'" +
 		",TO_DATE('" + awb.HO_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.HO_COURIER_ID + "'" +
+		",'" + re.ReplaceAllString(awb.HO_COURIER_ID, "") + "'" +
 		",TO_DATE('" + awb.HO_CDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.RECEIVING_AGENT_NO + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_AGENT_NO, "") + "'" +
 		",TO_DATE('" + awb.RECEIVING_AGENT_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.RECEIVING_AGENT_BRANCH + "'" +
-		",'" + awb.RECEIVING_AGENT_COURIER_ID + "'" +
-		",'" + awb.RECEIVING_AGENT_USER_ID + "'" +
-		",'" + awb.RECEIVING_AGENT_USER_ZONE + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_AGENT_BRANCH, "") + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_AGENT_COURIER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_AGENT_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_AGENT_USER_ZONE, "") + "'" +
 		",TO_DATE('" + awb.RECEIVING_AGENT_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.RECEIVING_OUT_NO + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_OUT_NO, "") + "'" +
 		",TO_DATE('" + awb.RECEIVING_OUT_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.RECEIVING_OUT_BRANCH + "'" +
-		",'" + awb.RECEIVING_OUT_COURIER_ID + "'" +
-		",'" + awb.RECEIVING_OUT_USER_ID + "'" +
-		",'" + awb.RECEIVING_OUT_USER_ZONE + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_OUT_BRANCH, "") + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_OUT_COURIER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_OUT_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.RECEIVING_OUT_USER_ZONE, "") + "'" +
 		",TO_DATE('" + awb.RECEIVING_OUT_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MANIFEST_OUTB_NO + "'" +
-		",'" + awb.MANIFEST_OUTB_ORIGIN + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_OUTB_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_OUTB_ORIGIN, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_OUTB_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MANIFEST_OUTB_BAG_NO + "'" +
-		",'" + awb.MANIFEST_OUTB_USER_ID + "'" +
-		",'" + awb.MANIFEST_OUTB_USER_ZONE + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_OUTB_BAG_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_OUTB_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_OUTB_USER_ZONE, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_OUTB_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.SMU_NO + "'" +
-		",'" + awb.SMU_SCHD_NO + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_SCHD_NO, "") + "'" +
 		",TO_DATE('" + awb.SMU_SCH_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
 		",TO_DATE('" + awb.SMU_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
 		",TO_DATE('" + awb.SMU_ETD + "', 'YYYY-MM-DD HH24:MI:SS')" +
 		",TO_DATE('" + awb.SMU_ETA + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.SMU_REMARKS + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_REMARKS, "") + "'" +
 		",TO_DATE('" + awb.SMU_REMARKS_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.SMU_QTY + "'" +
-		",'" + awb.SMU_WEIGHT + "'" +
-		",'" + awb.SMU_FLAG_APPROVE + "'" +
-		",'" + awb.SMU_FLAG_CANCEL + "'" +
-		",'" + awb.SMU_DESTINATION + "'" +
-		",'" + awb.MANIFEST_TRS1_NO + "'" +
-		",'" + awb.MANIFEST_TRS1_ORIGIN + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_QTY, "") + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_WEIGHT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_FLAG_APPROVE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_FLAG_CANCEL, "") + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_DESTINATION, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRS1_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRS1_ORIGIN, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_TRS1_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MANIFEST_TRS1_BAG_NO + "'" +
-		",'" + awb.MANIFEST_TRS1_USER_ID + "'" +
-		",'" + awb.MANIFEST_TRS1_USER_ZONE + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRS1_BAG_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRS1_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRS1_USER_ZONE, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_TRS1_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MANIFEST_TRSL_NO + "'" +
-		",'" + awb.MANIFEST_TRSL_ORIGIN + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRSL_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRSL_ORIGIN, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_TRSL_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MANIFEST_TRSL_BAG_NO + "'" +
-		",'" + awb.MANIFEST_TRSL_USER_ID + "'" +
-		",'" + awb.MANIFEST_TRSL_USER_ZONE + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRSL_BAG_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRSL_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_TRSL_USER_ZONE, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_TRSL_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MANIFEST_INB_NO + "'" +
-		",'" + awb.MANIFEST_INB_ORIGIN + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_INB_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_INB_ORIGIN, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_INB_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MANIFEST_INB_BAG_NO + "'" +
-		",'" + awb.MANIFEST_INB_USER_ID + "'" +
-		",'" + awb.MANIFEST_INB_USER_ZONE + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_INB_BAG_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_INB_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_INB_USER_ZONE, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_INB_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MANIFEST_BAG_NO + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_BAG_NO, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_BAG_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MANIFEST_BAG_BAG_NO + "'" +
-		",'" + awb.MANIFEST_BAG_USER_ID + "'" +
-		",'" + awb.MANIFEST_BAG_USER_ZONE + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_BAG_BAG_NO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_BAG_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_BAG_USER_ZONE, "") + "'" +
 		",TO_DATE('" + awb.MANIFEST_BAG_CRDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.PRA_MRSHEET_NO + "'" +
+		",'" + re.ReplaceAllString(awb.PRA_MRSHEET_NO, "") + "'" +
 		",TO_DATE('" + awb.PRA_MRSHEET_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.PRA_MRSHEET_BRANCH + "'" +
-		",'" + awb.PRA_MRSHEET_ZONE + "'" +
-		",'" + awb.PRA_MRSHEET_COURIER_ID + "'" +
-		",'" + awb.PRA_COURIER_ZONE_CODE + "'" +
-		",'" + awb.PRA_MRSHEET_UID + "'" +
-		",'" + awb.PRA_USER_ZONE_CODE + "'" +
+		",'" + re.ReplaceAllString(awb.PRA_MRSHEET_BRANCH, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PRA_MRSHEET_ZONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PRA_MRSHEET_COURIER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PRA_COURIER_ZONE_CODE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PRA_MRSHEET_UID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PRA_USER_ZONE_CODE, "") + "'" +
 		",TO_DATE('" + awb.PRA_CREATION_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MTA_OUT_MANIFEST_NO + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_OUT_MANIFEST_NO, "") + "'" +
 		",TO_DATE('" + awb.MTA_OUT_MANIFEST_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MTA_OUT_BRANCH_ID + "'" +
-		",'" + awb.MTA_OUT_DESTINATION + "'" +
-		",'" + awb.MTA_OUT_MANIFEST_UID + "'" +
-		",'" + awb.MTA_OUT_USER_ZONE_CODE + "'" +
-		",'" + awb.MTA_OUT_ESB_TIME + "'" +
-		",'" + awb.MTA_INB_MANIFEST_NO + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_OUT_BRANCH_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_OUT_DESTINATION, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_OUT_MANIFEST_UID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_OUT_USER_ZONE_CODE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_OUT_ESB_TIME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_INB_MANIFEST_NO, "") + "'" +
 		",TO_DATE('" + awb.MTA_INB_MANIFEST_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MTA_INB_BRANCH_ID + "'" +
-		",'" + awb.MTA_INB_DESTINATION + "'" +
-		",'" + awb.MTA_INB_MANIFEST_UID + "'" +
-		",'" + awb.MTA_INB_USER_ZONE_CODE + "'" +
-		",'" + awb.MTA_INB_ESB_TIME + "'" +
-		",'" + awb.MHOCNOTE_NO + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_INB_BRANCH_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_INB_DESTINATION, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_INB_MANIFEST_UID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_INB_USER_ZONE_CODE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MTA_INB_ESB_TIME, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MHOCNOTE_NO, "") + "'" +
 		",TO_DATE('" + awb.MHOCNOTE_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MHOCNOTE_BRANCH_ID + "'" +
-		",'" + awb.MHOCNOTE_ZONE + "'" +
-		",'" + awb.MHOCNOTE_ZONE_DEST + "'" +
-		",'" + awb.MHOCNOTE_USER_ID + "'" +
-		",'" + awb.MHOCNOTE_USER_ZONE_CODE + "'" +
+		",'" + re.ReplaceAllString(awb.MHOCNOTE_BRANCH_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MHOCNOTE_ZONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MHOCNOTE_ZONE_DEST, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MHOCNOTE_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MHOCNOTE_USER_ZONE_CODE, "") + "'" +
 		",TO_DATE('" + awb.DHOCNOTE_TDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MHICNOTE_NO + "'" +
+		",'" + re.ReplaceAllString(awb.MHICNOTE_NO, "") + "'" +
 		",TO_DATE('" + awb.MHICNOTE_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MHICNOTE_BRANCH_ID + "'" +
-		",'" + awb.MHICNOTE_ZONE + "'" +
-		",'" + awb.MHICNOTE_USER_ID + "'" +
-		",'" + awb.MHICNOTE_USER_ZONE_CODE + "'" +
+		",'" + re.ReplaceAllString(awb.MHICNOTE_BRANCH_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MHICNOTE_ZONE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MHICNOTE_USER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MHICNOTE_USER_ZONE_CODE, "") + "'" +
 		",TO_DATE('" + awb.DHICNOTE_TDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MRSHEET1_NO + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEET1_NO, "") + "'" +
 		",TO_DATE('" + awb.MRSHEET1_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MRSHEET1_BRANCH + "'" +
-		",'" + awb.MRSHEET1_COURIER_ID + "'" +
-		",'" + awb.MRSHEET1_UID + "'" +
-		",'" + awb.MRSHEET1_USER_ZONE_CODE + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEET1_BRANCH, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEET1_COURIER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEET1_UID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEET1_USER_ZONE_CODE, "") + "'" +
 		",TO_DATE('" + awb.MRSHEET1_CREATION_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MRSHEETL_NO + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEETL_NO, "") + "'" +
 		",TO_DATE('" + awb.MRSHEETL_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.MRSHEETL_BRANCH + "'" +
-		",'" + awb.MRSHEETL_COURIER_ID + "'" +
-		",'" + awb.MRSHEETL_UID + "'" +
-		",'" + awb.MRSHEETL_USER_ZONE_CODE + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEETL_BRANCH, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEETL_COURIER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEETL_UID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MRSHEETL_USER_ZONE_CODE, "") + "'" +
 		",TO_DATE('" + awb.MRSHEETL_CREATION_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.POD1_DRSHEET_NO + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_DRSHEET_NO, "") + "'" +
 		",TO_DATE('" + awb.POD1_MRSHEET_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.POD1_MRSHEET_BRANCH + "'" +
-		",'" + awb.POD1_MRSHEET_COURIER_ID + "'" +
-		",'" + awb.POD1_COURIER_ZONE_CODE + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_MRSHEET_BRANCH, "") + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_MRSHEET_COURIER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_COURIER_ZONE_CODE, "") + "'" +
 		",TO_DATE('" + awb.POD1_DRSHEET_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.POD1_DRSHEET_RECEIVER + "'" +
-		",'" + awb.POD1_DRSHEET_STATUS + "'" +
-		",'" + awb.POD1_LATITUDE + "'" +
-		",'" + awb.POD1_LONGITUDE + "'" +
-		",'" + awb.POD1_EPOD_URL + "'" +
-		",'" + awb.POD1_EPOD_URL_PIC + "'" +
-		",'" + awb.POD1_DRSHEET_UID + "'" +
-		",'" + awb.POD1_USER_ZONE_CODE + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_DRSHEET_RECEIVER, "") + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_DRSHEET_STATUS, "") + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_LATITUDE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_LONGITUDE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_EPOD_URL, "") + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_EPOD_URL_PIC, "") + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_DRSHEET_UID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.POD1_USER_ZONE_CODE, "") + "'" +
 		",TO_DATE('" + awb.POD1_DRSHEET_UDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.PODL_DRSHEET_NO + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_DRSHEET_NO, "") + "'" +
 		",TO_DATE('" + awb.PODL_MRSHEET_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.PODL_MRSHEET_BRANCH + "'" +
-		",'" + awb.PODL_MRSHEET_COURIER_ID + "'" +
-		",'" + awb.PODL_COURIER_ZONE_CODE + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_MRSHEET_BRANCH, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_MRSHEET_COURIER_ID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_COURIER_ZONE_CODE, "") + "'" +
 		",TO_DATE('" + awb.PODL_DRSHEET_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.PODL_DRSHEET_RECEIVER + "'" +
-		",'" + awb.PODL_DRSHEET_STATUS + "'" +
-		",'" + awb.PODL_LATITUDE + "'" +
-		",'" + awb.PODL_LONGITUDE + "'" +
-		",'" + awb.PODL_EPOD_URL + "'" +
-		",'" + awb.PODL_EPOD_URL_PIC + "'" +
-		",'" + awb.PODL_DRSHEET_UID + "'" +
-		",'" + awb.PODL_USER_ZONE_CODE + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_DRSHEET_RECEIVER, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_DRSHEET_STATUS, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_LATITUDE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_LONGITUDE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_EPOD_URL, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_EPOD_URL_PIC, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_DRSHEET_UID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.PODL_USER_ZONE_CODE, "") + "'" +
 		",TO_DATE('" + awb.PODL_DRSHEET_UDATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.DO_NO + "'" +
+		",'" + re.ReplaceAllString(awb.DO_NO, "") + "'" +
 		",TO_DATE('" + awb.DO_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.RDO_NO + "'" +
+		",'" + re.ReplaceAllString(awb.RDO_NO, "") + "'" +
 		",TO_DATE('" + awb.RDO_DATE + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.SHIPPER_PROVIDER + "'" +
-		",'" + awb.CNOTE_REFNO + "'" +
-		",'" + awb.MANIFEST_OUTB_APPROVED + "'" +
-		",'" + awb.MANIFEST_INB_APPROVED + "'" +
-		",'" + awb.SMU_BAG_BUX + "'" +
+		",'" + re.ReplaceAllString(awb.SHIPPER_PROVIDER, "") + "'" +
+		",'" + re.ReplaceAllString(awb.CNOTE_REFNO, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_OUTB_APPROVED, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_INB_APPROVED, "") + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_BAG_BUX, "") + "'" +
 		",TO_DATE('" + awb.SMU_TGL_MASTER_BAG + "', 'YYYY-MM-DD HH24:MI:SS')" +
-		",'" + awb.SMU_USER_MASTER_BAG + "'" +
-		",'" + awb.SMU_NO_MASTER_BAG + "'" +
-		",'" + awb.SMU_MANIFEST_DESTINATION + "'" +
-		",'" + awb.MANIFEST_COST_WEIGHT + "'" +
-		",'" + awb.MANIFEST_ACT_WEIGHT + "'" +
-		",'" + awb.DWH_PACKING_FEE + "'" +
-		",'" + awb.DWH_SURCHARGE + "'" +
-		",'" + awb.DWH_DISC_REV_TYPE + "'" +
-		",'" + awb.DWH_DISCOUNT_AMT + "'" +
-		",'" + awb.DWH_FCHARGE_AFT_DISC_AMT + "'" +
-		",'" + awb.DWH_CUST_DISC_IC + "'" +
-		",'" + awb.DWH_CUST_DISC_DM + "'" +
-		",'" + awb.DWH_RT_PACKING_FEE + "'" +
-		",'" + awb.DWH_RT_FREIGHT_CHARGE + "'" +
-		",'" + awb.DWH_RT_SURCHARGE + "'" +
-		",'" + awb.DWH_RT_DISC_AMT + "'" +
-		",'" + awb.DWH_RT_FCHARGE_AFT_DISC_AMT + "'" +
-		",'" + awb.DWH_PAYTYPE + "'" +
-		",'" + awb.DWH_EPAY_VEND + "'" +
-		",'" + awb.DWH_EPAY_TRXID + "'" +
-		",'" + awb.DWH_VAT_FCHARGE_AFT_DISC + "'" +
-		",'" + awb.DWH_VAT_RT_FCHARGE_AFT_DISC + "')"
+		",'" + re.ReplaceAllString(awb.SMU_USER_MASTER_BAG, "") + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_NO_MASTER_BAG, "") + "'" +
+		",'" + re.ReplaceAllString(awb.SMU_MANIFEST_DESTINATION, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_COST_WEIGHT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.MANIFEST_ACT_WEIGHT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_PACKING_FEE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_SURCHARGE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_DISC_REV_TYPE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_DISCOUNT_AMT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_FCHARGE_AFT_DISC_AMT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_CUST_DISC_IC, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_CUST_DISC_DM, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_RT_PACKING_FEE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_RT_FREIGHT_CHARGE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_RT_SURCHARGE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_RT_DISC_AMT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_RT_FCHARGE_AFT_DISC_AMT, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_PAYTYPE, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_EPAY_VEND, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_EPAY_TRXID, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_VAT_FCHARGE_AFT_DISC, "") + "'" +
+		",'" + re.ReplaceAllString(awb.DWH_VAT_RT_FCHARGE_AFT_DISC, "") + "')"
 	return sql
 }
 
