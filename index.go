@@ -608,9 +608,10 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
 	}
 
 	q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
-		"WHERE ts.AWB IS NULL ORDER BY t.CREATED_DATE_SEARCH ASC " +
+		"WHERE ts.AWB IS NULL " +
 		"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('2022-01-01', 'YYYY-MM-DD') " +
-		"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('2022-01-21', 'YYYY-MM-DD')")
+		"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('2022-01-21', 'YYYY-MM-DD') " +
+		"ORDER BY t.CREATED_DATE_SEARCH ASC")
 
 	if err != nil {
 		log.Fatal(err)
@@ -663,9 +664,10 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 	q, err := db.Query("SELECT td.AWB_NO, td.AWB_DATE, td.CUST_NAME FROM TRANSACTION_DETAIL td " +
 		"LEFT JOIN \"TRANSACTION\" t ON td.AWB_NO = t.AWB " +
 		"LEFT JOIN T_SUKSES_TERIMA ts ON td.AWB_NO = ts.AWB " +
+		"WHERE t.AWB IS NULL AND ts.AWB IS NULL " +
 		"AND TRUNC(td.AWB_DATE) >= TO_DATE('2022-01-01', 'YYYY-MM-DD') " +
 		"AND TRUNC(td.AWB_DATE) <= TO_DATE('2022-01-21', 'YYYY-MM-DD') " +
-		"WHERE t.AWB IS NULL AND ts.AWB IS NULL ORDER BY td.AWB_DATE")
+		"ORDER BY td.AWB_DATE")
 	if err != nil {
 		log.Fatal(err)
 	}
