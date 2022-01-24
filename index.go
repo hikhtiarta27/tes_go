@@ -796,7 +796,22 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 			json.NewDecoder(resp.Body).Decode(&r)
 
 			for i := range r.Jlc {
-				fmt.Println(i)
+				awb := r.Jlc[i]
+
+				if awb.CNOTE_NO != "" {
+
+					procedureSql := reconstruct(&awb)
+					_, err = db.Exec(procedureSql)
+					success++
+
+					if err != nil {
+						failed++
+						log.Fatal(err)
+
+					}
+				} else {
+					failed++
+				}
 			}
 
 			for i := range r.Account {
@@ -804,11 +819,24 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 				if len(x[i]) == 0 {
 					continue
 				}
-
-				fmt.Println("exist")
 				for j := range x[i] {
 
-					fmt.Println(x[i][j])
+					awb := x[i][j]
+
+					if awb.CNOTE_NO != "" {
+
+						procedureSql := reconstruct(&awb)
+						_, err = db.Exec(procedureSql)
+						success++
+
+						if err != nil {
+							failed++
+							log.Fatal(err)
+
+						}
+					} else {
+						failed++
+					}
 				}
 			}
 
