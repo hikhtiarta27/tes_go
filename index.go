@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -784,12 +783,9 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 				log.Fatal(err)
 			}
 
-			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-			bodyString := string(bodyBytes)
-			fmt.Println(bodyString)
+			// respJson = map[string]string{}
+
+			fmt.Println(json.NewDecoder(resp.Body))
 
 		}
 	}
