@@ -60,8 +60,8 @@ type PayloadTrxDetail struct {
 }
 
 type ResponseTrxDetail struct {
-	Jlc     interface{} `json:"jlc"`
-	Account interface{} `json:"account"`
+	Jlc     interface{}
+	Account interface{}
 }
 
 type AWBDetail struct {
@@ -790,7 +790,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 				log.Fatal(err)
 			}
 
-			json.NewDecoder(resp.Body).Decode(&r)
+			json.NewDecoder(resp.Body).Decode(r)
 
 			fmt.Println(r)
 
