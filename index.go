@@ -747,7 +747,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 			}
 
 			q, _ = db.Query("SELECT ACCOUNT_NUMBER, ACCOUNT_BRANCH, ACCOUNT_CATEGORY FROM ACCOUNT WHERE REGISTRATION_ID = '" + param.RegistrationId + "' " +
-				"AND ACCOUNT_SERVICE = 'JLC' AND ACCOUNT_SERVICE != 'JLC' AND ACCOUNT_TRANSACTION = 'Y'")
+				"AND ACCOUNT_SERVICE != 'JLC' AND ACCOUNT_TRANSACTION = 'Y'")
 
 			for q.Next() {
 				acc := new(Account)
