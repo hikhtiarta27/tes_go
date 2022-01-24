@@ -840,13 +840,11 @@ func main() {
 		go syncTransactionDetail(ch1, &wg, db)
 
 		// close the channel in the background
-		func() {
+		go func() {
 			wg.Wait()
 			close(ch)
 			close(ch1)
-			fmt.Println("Done")
-			fmt.Println("Set to true")
-			updateSyncTable(db, p, true)
+
 		}()
 
 		resTransaction := <-ch
@@ -861,6 +859,10 @@ func main() {
 		resp.Data = *respData
 		resp.Message = "Hallo"
 		resp.Success = true
+
+		fmt.Println("Done")
+		fmt.Println("Set to true")
+		updateSyncTable(db, p, true)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
