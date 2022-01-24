@@ -736,7 +736,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 		if anom.Status == 1 {
 
-			date := "2021-01-01"
+			date := "2022-01-24"
 			accJlc := &Account{}
 			accBasic := make([]map[string]string, 0)
 
