@@ -41,6 +41,11 @@ type TransactionDao struct {
 	SHIPPER_NAME        string
 }
 
+type SyncContingencyDao struct {
+	RegistrationId string
+	Status         int
+}
+
 type AWBDetail struct {
 	CREATE_DATE                  string
 	CNOTE_NO                     string
@@ -629,7 +634,7 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, p
 			log.Fatal(err)
 		}
 
-		if anom.Status == 1 {
+		if anom.Status == 0 {
 			q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
 				"WHERE ts.AWB IS NULL AND t.REGISTRATION_ID = '" + param.RegistrationId + "' " +
 				"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('" + param.StartDate + "', 'YYYY-MM-DD') " +
@@ -762,6 +767,18 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 	ch <- transactionDetailObj
 }
 
+func updateSyncTable(wg *sync.WaitGroup, db *sql.DB, param *param) {
+	sc := SyncContingencyDao{}
+	q := db.QueryRow("SELECT * FROM SYNC_CONTINGENCY sc WHERE REGISTRATION_ID = '" + param.RegistrationId + "'")
+
+	if err := q.Scan(&sc.RegistrationId, &sc.Status); err != nil {
+		fmt.Println("Not found")
+		return
+	}
+
+	fmt.Println("Found")
+}
+
 func main() {
 
 	r := chi.NewRouter()
@@ -787,7 +804,8 @@ func main() {
 			return
 		}
 
-		wg.Add(2)
+		wg.Add(3)
+		go updateSyncTable(&wg, db, p)
 		go syncTransaction(ch, &wg, db, p)
 		go syncTransactionDetail(ch1, &wg, db)
 
