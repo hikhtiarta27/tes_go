@@ -60,8 +60,8 @@ type PayloadTrxDetail struct {
 }
 
 type ResponseTrxDetail struct {
-	Jlc     []interface{}
-	Account []interface{}
+	Jlc     []AWBDetail
+	Account [][]AWBDetail
 }
 
 type AWBDetail struct {
@@ -795,6 +795,11 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 			fmt.Println(r)
 
 			for i := range r.Jlc {
+				fmt.Println(i)
+			}
+
+			for i := range r.Account {
+				fmt.Println("Ok")
 				fmt.Println(i)
 			}
 
