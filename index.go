@@ -729,7 +729,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 			log.Fatal(err)
 		}
 
-		if anom.Status == 0 {
+		if anom.Status == 1 {
 
 			date := "2021-01-01"
 			accJlc := &Account{}
