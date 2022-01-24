@@ -782,8 +782,8 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 				payload, _ := json.Marshal(&PayloadTrxDetail{
 					From: date,
 					Jlc: map[string]string{
-						// "number": accJlc.Number,
-						"number": "1009448221",
+						"number": accJlc.Number,
+						// "number": "1009448221",
 					},
 					Acc: accBasic,
 				})
@@ -996,7 +996,7 @@ func main() {
 
 		resp := &responseJson{}
 		resp.Data = *respData
-		resp.Message = "Hallo"
+		resp.Message = "Sync data"
 		resp.Success = true
 
 		updateSyncTable(db, p, true)
