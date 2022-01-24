@@ -840,14 +840,15 @@ func main() {
 		go syncTransactionDetail(ch1, &wg, db)
 
 		// close the channel in the background
-		wg.Wait()
-		close(ch)
-		close(ch1)
-		fmt.Println("Done")
+		go func() {
+			wg.Wait()
+			close(ch)
+			close(ch1)
+			fmt.Println("Done")
+			fmt.Println("Set to true")
 
-		fmt.Println("Set to true")
-
-		updateSyncTable(db, p, true)
+			updateSyncTable(db, p, true)
+		}()
 
 		resTransaction := <-ch
 		resTransactionDetail := <-ch1
