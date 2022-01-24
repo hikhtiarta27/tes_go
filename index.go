@@ -770,6 +770,16 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 			url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectData"
 
+			cek := &PayloadTrxDetail{
+				From: date,
+				Jlc: map[string]string{
+					"number": accJlc.Number,
+				},
+				Acc: accBasic,
+			}
+
+			fmt.Println(cek)
+
 			payload, _ := json.Marshal(&PayloadTrxDetail{
 				From: date,
 				Jlc: map[string]string{
