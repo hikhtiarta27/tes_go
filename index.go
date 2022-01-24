@@ -783,9 +783,9 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 				log.Fatal(err)
 			}
 
-			// respJson = map[string]string{}
+			respJson := map[string]string{}
 
-			fmt.Println(json.NewDecoder(resp.Body))
+			fmt.Println(json.NewDecoder(resp.Body).Decode(respJson))
 
 		}
 	}
