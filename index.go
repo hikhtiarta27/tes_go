@@ -767,13 +767,41 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 	ch <- transactionDetailObj
 }
 
-func updateSyncTable(wg *sync.WaitGroup, db *sql.DB, param *param) {
+func updateSyncTable(wg *sync.WaitGroup, db *sql.DB, param *param, status bool) {
+
+	exist := false
+
+	newStatus := 0
+
+	if status {
+		newStatus = 1
+	}
+
 	sc := SyncContingencyDao{}
 	q := db.QueryRow("SELECT * FROM SYNC_CONTINGENCY sc WHERE REGISTRATION_ID = '" + param.RegistrationId + "'")
 
 	if err := q.Scan(&sc.RegistrationId, &sc.Status); err != nil {
-		fmt.Println("Not found")
-		return
+		stmt, _ := db.Prepare("INSERT INTO SYNC_CONTINGENCY(REGISTRATION_ID, STATUS) VALUES(?,?)")
+
+		_, err := stmt.Exec(param.RegistrationId, 0)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		exist = true
+	} else {
+		exist = true
+	}
+
+	if exist {
+		stmt, _ := db.Prepare("UPDATE SYNC_CONTINGENCY SET STATUS = ? WHERE REGISTRATION_ID = ?")
+
+		_, err := stmt.Exec(newStatus, param.RegistrationId)
+
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	fmt.Println("Found")
@@ -805,13 +833,14 @@ func main() {
 		}
 
 		wg.Add(3)
-		go updateSyncTable(&wg, db, p)
+		go updateSyncTable(&wg, db, p, false)
 		go syncTransaction(ch, &wg, db, p)
 		go syncTransactionDetail(ch1, &wg, db)
 
 		// close the channel in the background
 		go func() {
 			wg.Wait()
+			updateSyncTable(&wg, db, p, true)
 			close(ch)
 			close(ch1)
 		}()
