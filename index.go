@@ -14,7 +14,7 @@ import (
 	_ "github.com/godror/godror"
 )
 
-type anomali struct {
+type anomaliStruct struct {
 	Status int
 }
 
@@ -616,69 +616,72 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, p
 	total, success, failed := 0, 0, 0
 
 	sql := "SELECT JNE.F_GET_CEK_ANOMALI (" + param.RegistrationId + ") AS STATUS FROM DUAL"
-	fmt.Println(sql)
+
 	anomali, _ := db.Query(sql)
 
-	fmt.Println(anomali)
+	for anomali.Next() {
+		anom := new(anomaliStruct)
+		if err := anomali.Scan(&anom.Status); err != nil {
+			log.Fatal(err)
+		}
 
-	var status int
-	err := anomali.Scan(&status)
-	fmt.Println("STATUS :=")
-	fmt.Println(status)
-	if err == nil {
-
-		fmt.Println("Masuk")
-
-		// q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
-		// 	"WHERE ts.AWB IS NULL AND t.REGISTRATION_ID = '" + param.RegistrationId + "' " +
-		// 	"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('" + param.StartDate + "', 'YYYY-MM-DD') " +
-		// 	"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('" + param.EndDate + "', 'YYYY-MM-DD') ")
-
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-
-		// for q.Next() {
-		// 	transaction := new(TransactionDao)
-		// 	if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
-		// 		log.Fatal(err)
-		// 	}
-
-		// 	url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
-		// 	payload, _ := json.Marshal(
-		// 		map[string]string{
-		// 			"cnote": transaction.AWB,
-		// 		})
-
-		// 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
-
-		// 	if err != nil {
-		// 		failed++
-		// 		log.Fatal(err)
-		// 	}
-
-		// 	awb := AWBDetail{}
-
-		// 	json.NewDecoder(resp.Body).Decode(&awb)
-
-		// 	if awb.CNOTE_NO != "" {
-
-		// 		procedureSql := reconstruct(&awb)
-		// 		_, err = db.Exec(procedureSql)
-		// 		success++
-
-		// 		if err != nil {
-		// 			failed++
-		// 			log.Fatal(err)
-
-		// 		}
-		// 	} else {
-		// 		failed++
-		// 	}
-
-		// 	total++
-		// }
+		fmt.Println(anom)
 	}
+
+	// if err == nil {
+
+	// fmt.Println("Masuk")
+
+	// q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
+	// 	"WHERE ts.AWB IS NULL AND t.REGISTRATION_ID = '" + param.RegistrationId + "' " +
+	// 	"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('" + param.StartDate + "', 'YYYY-MM-DD') " +
+	// 	"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('" + param.EndDate + "', 'YYYY-MM-DD') ")
+
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// for q.Next() {
+	// 	transaction := new(TransactionDao)
+	// 	if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
+	// 		log.Fatal(err)
+	// 	}
+
+	// 	url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
+	// 	payload, _ := json.Marshal(
+	// 		map[string]string{
+	// 			"cnote": transaction.AWB,
+	// 		})
+
+	// 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+
+	// 	if err != nil {
+	// 		failed++
+	// 		log.Fatal(err)
+	// 	}
+
+	// 	awb := AWBDetail{}
+
+	// 	json.NewDecoder(resp.Body).Decode(&awb)
+
+	// 	if awb.CNOTE_NO != "" {
+
+	// 		procedureSql := reconstruct(&awb)
+	// 		_, err = db.Exec(procedureSql)
+	// 		success++
+
+	// 		if err != nil {
+	// 			failed++
+	// 			log.Fatal(err)
+
+	// 		}
+	// 	} else {
+	// 		failed++
+	// 	}
+
+	// 	total++
+	// }
+	// }
 
 	transactionObj := map[string]int{
 		"total":   total,
