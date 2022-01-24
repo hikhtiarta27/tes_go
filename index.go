@@ -14,6 +14,10 @@ import (
 	_ "github.com/godror/godror"
 )
 
+type anomali struct {
+	Status int
+}
+
 type param struct {
 	RegistrationId string `json:"registrationId"`
 	StartDate      string `json:"startDate"`
@@ -617,7 +621,7 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, p
 
 	fmt.Println(anomali)
 
-	var status string
+	var status int
 	err := anomali.Scan(&status)
 	fmt.Println("STATUS :=")
 	fmt.Println(status)
