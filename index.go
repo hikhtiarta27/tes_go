@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"sync"
 
 	"github.com/go-chi/chi/v5"
@@ -795,9 +796,8 @@ func updateSyncTable(db *sql.DB, param *param, status bool) {
 	}
 
 	if exist {
-		stmt, _ := db.Prepare("UPDATE SYNC_CONTINGENCY SET STATUS = ? WHERE REGISTRATION_ID = ?")
 
-		_, err := stmt.Exec(newStatus, param.RegistrationId)
+		_, err := db.Exec("UPDATE SYNC_CONTINGENCY SET STATUS = " + strconv.Itoa(newStatus) + " WHERE REGISTRATION_ID = '" + param.RegistrationId + "'")
 
 		if err != nil {
 			fmt.Println("Update sync")
