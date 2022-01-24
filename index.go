@@ -611,7 +611,7 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, p
 
 	total, success, failed := 0, 0, 0
 
-	anomali := db.QueryRow("SELECT JNE.F_GET_CEK_ANOMALI (" + param.RegistrationId + ") AS STATUS FROM DUAL")
+	anomali, _ := db.Query("SELECT JNE.F_GET_CEK_ANOMALI (" + param.RegistrationId + ") AS STATUS FROM DUAL")
 
 	fmt.Println(anomali)
 
