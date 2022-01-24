@@ -792,6 +792,8 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 			json.NewDecoder(resp.Body).Decode(&r)
 
+			fmt.Println(r)
+
 			for i := range r.Jlc {
 				fmt.Println(i)
 			}
