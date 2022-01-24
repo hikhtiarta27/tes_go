@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -611,6 +612,7 @@ func reconstruct(awb *AWBDetail) string {
 }
 
 func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, param *param) {
+
 	defer wg.Done()
 
 	total, success, failed := 0, 0, 0
@@ -619,69 +621,69 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, p
 
 	anomali, _ := db.Query(sql)
 
+	defer anomali.Close()
+
 	for anomali.Next() {
 		anom := new(anomaliStruct)
 		if err := anomali.Scan(&anom.Status); err != nil {
 			log.Fatal(err)
 		}
 
-		fmt.Println(anom)
+		if anom.Status == 0 {
+			q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
+				"WHERE ts.AWB IS NULL AND t.REGISTRATION_ID = '" + param.RegistrationId + "' " +
+				"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('" + param.StartDate + "', 'YYYY-MM-DD') " +
+				"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('" + param.EndDate + "', 'YYYY-MM-DD') ")
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			defer q.Close()
+
+			for q.Next() {
+				transaction := new(TransactionDao)
+				if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
+					log.Fatal(err)
+				}
+
+				url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
+				payload, _ := json.Marshal(
+					map[string]string{
+						"cnote": transaction.AWB,
+					})
+
+				resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+
+				if err != nil {
+					failed++
+					log.Fatal(err)
+				}
+
+				awb := AWBDetail{}
+
+				json.NewDecoder(resp.Body).Decode(&awb)
+
+				if awb.CNOTE_NO != "" {
+
+					procedureSql := reconstruct(&awb)
+					_, err = db.Exec(procedureSql)
+					success++
+
+					if err != nil {
+						failed++
+						log.Fatal(err)
+
+					}
+				} else {
+					failed++
+				}
+
+				total++
+			}
+
+		}
 	}
-
-	// if err == nil {
-
-	// fmt.Println("Masuk")
-
-	// q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
-	// 	"WHERE ts.AWB IS NULL AND t.REGISTRATION_ID = '" + param.RegistrationId + "' " +
-	// 	"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('" + param.StartDate + "', 'YYYY-MM-DD') " +
-	// 	"AND TRUNC(t.CREATED_DATE_SEARCH) <= TO_DATE('" + param.EndDate + "', 'YYYY-MM-DD') ")
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// for q.Next() {
-	// 	transaction := new(TransactionDao)
-	// 	if err := q.Scan(&transaction.AWB, &transaction.CREATED_DATE_SEARCH, &transaction.SHIPPER_NAME); err != nil {
-	// 		log.Fatal(err)
-	// 	}
-
-	// 	url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectDataByCnote"
-	// 	payload, _ := json.Marshal(
-	// 		map[string]string{
-	// 			"cnote": transaction.AWB,
-	// 		})
-
-	// 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
-
-	// 	if err != nil {
-	// 		failed++
-	// 		log.Fatal(err)
-	// 	}
-
-	// 	awb := AWBDetail{}
-
-	// 	json.NewDecoder(resp.Body).Decode(&awb)
-
-	// 	if awb.CNOTE_NO != "" {
-
-	// 		procedureSql := reconstruct(&awb)
-	// 		_, err = db.Exec(procedureSql)
-	// 		success++
-
-	// 		if err != nil {
-	// 			failed++
-	// 			log.Fatal(err)
-
-	// 		}
-	// 	} else {
-	// 		failed++
-	// 	}
-
-	// 	total++
-	// }
-	// }
 
 	transactionObj := map[string]int{
 		"total":   total,
