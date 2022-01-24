@@ -25,6 +25,8 @@ type param struct {
 	RegistrationId string `json:"registrationId"`
 	StartDate      string `json:"startDate"`
 	EndDate        string `json:"endDate"`
+	Username       string `json:"username"`
+	ApiKey         string `json:"apiKey"`
 }
 
 type responseData struct {
@@ -34,7 +36,7 @@ type responseData struct {
 type responseJson struct {
 	Success bool         `json:"status"`
 	Message string       `json:"message"`
-	Data    responseData `json:"data"`
+	Data    responseData `json:"data,omitempty"`
 }
 
 type TransactionDao struct {
@@ -900,6 +902,26 @@ func main() {
 
 	r.Post("/synchronize", func(w http.ResponseWriter, r *http.Request) {
 
+		p := &param{}
+
+		err := json.NewDecoder(r.Body).Decode(p)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		resp := &responseJson{}
+		resp.Message = "Sync data"
+		resp.Success = true
+
+		if p.Username != "SYNC_CS3V2" && p.ApiKey != "qaMKCggjFq" {
+			resp.Success = false
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
+
 		db, _ := sql.Open("godror", `user="jne" password="JNEmerdeka123!" connectString="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=34.101.218.194)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pdbprod)))"`)
 		db.SetMaxOpenConns(50)
 
@@ -909,14 +931,6 @@ func main() {
 		ch1 := make(chan map[string]int)
 
 		var wg sync.WaitGroup
-
-		p := &param{}
-
-		err := json.NewDecoder(r.Body).Decode(p)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
 
 		updateSyncTable(db, p, false)
 
@@ -940,10 +954,7 @@ func main() {
 			TransactionDetail: resTransactionDetail,
 		}
 
-		resp := &responseJson{}
 		resp.Data = *respData
-		resp.Message = "Sync data"
-		resp.Success = true
 
 		updateSyncTable(db, p, true)
 
