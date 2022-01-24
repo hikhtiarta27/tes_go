@@ -840,12 +840,10 @@ func main() {
 		go syncTransactionDetail(ch1, &wg, db)
 
 		// close the channel in the background
-		go func() {
-			wg.Wait()
-			close(ch)
-			close(ch1)
-			fmt.Println("Done")
-		}()
+		wg.Wait()
+		close(ch)
+		close(ch1)
+		fmt.Println("Done")
 
 		fmt.Println("Set to true")
 
