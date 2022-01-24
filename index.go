@@ -800,7 +800,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 			for i := range r.Account {
 				fmt.Println("Ok")
-				fmt.Println(i)
+				fmt.Println(r.Account[i])
 			}
 
 		}
