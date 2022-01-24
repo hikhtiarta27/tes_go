@@ -613,6 +613,8 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, p
 
 	anomali := db.QueryRow("SELECT JNE.F_GET_CEK_ANOMALI (" + param.RegistrationId + ") AS STATUS FROM DUAL")
 
+	fmt.Println(anomali)
+
 	var status string
 	err := anomali.Scan(status)
 	fmt.Println("STATUS :=")
