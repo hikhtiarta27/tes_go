@@ -767,7 +767,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 	ch <- transactionDetailObj
 }
 
-func updateSyncTable(wg *sync.WaitGroup, db *sql.DB, param *param, status bool) {
+func updateSyncTable(db *sql.DB, param *param, status bool) {
 
 	exist := false
 
@@ -832,8 +832,9 @@ func main() {
 			return
 		}
 
-		wg.Add(3)
-		go updateSyncTable(&wg, db, p, false)
+		updateSyncTable(db, p, false)
+
+		wg.Add(2)
 		go syncTransaction(ch, &wg, db, p)
 		go syncTransactionDetail(ch1, &wg, db)
 
@@ -842,11 +843,12 @@ func main() {
 			wg.Wait()
 			close(ch)
 			close(ch1)
+			fmt.Println("Done")
 		}()
 
 		fmt.Println("Set to true")
 
-		updateSyncTable(&wg, db, p, true)
+		updateSyncTable(db, p, true)
 
 		resTransaction := <-ch
 		resTransactionDetail := <-ch1
