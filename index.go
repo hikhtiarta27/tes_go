@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -58,6 +57,11 @@ type PayloadTrxDetail struct {
 	From string      `json:"from"`
 	Jlc  interface{} `json:"jlc"`
 	Acc  interface{} `json:"acc"`
+}
+
+type ResponseTrxDetail struct {
+	Jlc interface{}
+	Acc interface{}
 }
 
 type AWBDetail struct {
@@ -770,18 +774,6 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 			url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectData"
 
-			fmt.Println(accBasic)
-
-			cek := &PayloadTrxDetail{
-				From: date,
-				Jlc: map[string]string{
-					"number": accJlc.Number,
-				},
-				Acc: accBasic,
-			}
-
-			fmt.Println(cek)
-
 			payload, _ := json.Marshal(&PayloadTrxDetail{
 				From: date,
 				Jlc: map[string]string{
@@ -792,16 +784,15 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 			resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 
+			r := &ResponseTrxDetail{}
+
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-			bodyString := string(bodyBytes)
-			fmt.Println(bodyString)
+			json.NewDecoder(resp.Body).Decode(&r)
+
+			fmt.Println(r)
 
 		}
 	}
@@ -887,7 +878,6 @@ func updateSyncTable(db *sql.DB, param *param, status bool) {
 		_, err := db.Exec("INSERT INTO SYNC_CONTINGENCY VALUES('" + param.RegistrationId + "',0)")
 
 		if err != nil {
-			fmt.Println("Insert sync")
 			log.Fatal(err)
 		}
 
@@ -901,12 +891,9 @@ func updateSyncTable(db *sql.DB, param *param, status bool) {
 		_, err := db.Exec("UPDATE SYNC_CONTINGENCY SET STATUS = " + strconv.Itoa(newStatus) + " WHERE REGISTRATION_ID = '" + param.RegistrationId + "'")
 
 		if err != nil {
-			fmt.Println("Update sync")
 			log.Fatal(err)
 		}
 	}
-
-	fmt.Println("Found")
 }
 
 func main() {
@@ -961,8 +948,6 @@ func main() {
 		resp.Message = "Hallo"
 		resp.Success = true
 
-		fmt.Println("Done")
-		fmt.Println("Set to true")
 		updateSyncTable(db, p, true)
 
 		w.Header().Set("Content-Type", "application/json")
