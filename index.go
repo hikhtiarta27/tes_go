@@ -777,7 +777,8 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 			payload, _ := json.Marshal(&PayloadTrxDetail{
 				From: date,
 				Jlc: map[string]string{
-					"number": accJlc.Number,
+					// "number": accJlc.Number,
+					"number": "1009448221",
 				},
 				Acc: accBasic,
 			})
@@ -799,8 +800,14 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 			}
 
 			for i := range r.Account {
-				fmt.Println("Ok")
-				fmt.Println(r.Account[i])
+				x := r.Account
+				if len(x[i]) == 0 {
+					continue
+				}
+
+				for j := range x[i] {
+					fmt.Println(x[i][j])
+				}
 			}
 
 		}
