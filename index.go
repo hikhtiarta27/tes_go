@@ -784,13 +784,13 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 			resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 
-			r := &ResponseTrxDetail{}
+			r := ResponseTrxDetail{}
 
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			json.NewDecoder(resp.Body).Decode(r)
+			json.NewDecoder(resp.Body).Decode(&r)
 
 			fmt.Println(r)
 
