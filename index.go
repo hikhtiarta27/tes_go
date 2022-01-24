@@ -783,6 +783,8 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 				Acc: accBasic,
 			})
 
+			fmt.Println(accJlc.Number)
+
 			resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 
 			r := ResponseTrxDetail{}
@@ -805,7 +807,9 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 					continue
 				}
 
+				fmt.Println("exist")
 				for j := range x[i] {
+
 					fmt.Println(x[i][j])
 				}
 			}
