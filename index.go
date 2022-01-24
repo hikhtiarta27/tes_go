@@ -786,6 +786,7 @@ func updateSyncTable(db *sql.DB, param *param, status bool) {
 		_, err := stmt.Exec(param.RegistrationId, 0)
 
 		if err != nil {
+			fmt.Println("Insert sync")
 			log.Fatal(err)
 		}
 
@@ -800,6 +801,7 @@ func updateSyncTable(db *sql.DB, param *param, status bool) {
 		_, err := stmt.Exec(newStatus, param.RegistrationId)
 
 		if err != nil {
+			fmt.Println("Update sync")
 			log.Fatal(err)
 		}
 	}
