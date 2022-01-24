@@ -47,6 +47,18 @@ type SyncContingencyDao struct {
 	Status         int
 }
 
+type Account struct {
+	Number   string
+	Branch   string
+	Category string
+}
+
+type PayloadTrxDetail struct {
+	From string      `json:"from"`
+	Jlc  interface{} `json:"jlc"`
+	Acc  []*Account  `json:"acc"`
+}
+
 type AWBDetail struct {
 	CREATE_DATE                  string
 	CNOTE_NO                     string
@@ -635,7 +647,7 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, p
 			log.Fatal(err)
 		}
 
-		if anom.Status == 1 {
+		if anom.Status == 0 {
 			q, err := db.Query("SELECT t.AWB, t.CREATED_DATE_SEARCH, t.SHIPPER_NAME FROM \"TRANSACTION\" t LEFT JOIN T_SUKSES_TERIMA ts ON t.AWB = ts.AWB " +
 				"WHERE ts.AWB IS NULL AND t.REGISTRATION_ID = '" + param.RegistrationId + "' " +
 				"AND TRUNC(t.CREATED_DATE_SEARCH) >= TO_DATE('" + param.StartDate + "', 'YYYY-MM-DD') " +
@@ -700,10 +712,66 @@ func syncTransaction(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, p
 	ch <- transactionObj
 }
 
-func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB) {
+func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql.DB, param *param) {
 	defer wg.Done()
 
 	total, success, failed := 0, 0, 0
+
+	sql := "SELECT JNE.F_GET_CEK_ANOMALI (" + param.RegistrationId + ") AS STATUS FROM DUAL"
+
+	anomali, _ := db.Query(sql)
+
+	defer anomali.Close()
+
+	for anomali.Next() {
+		anom := new(anomaliStruct)
+		if err := anomali.Scan(&anom.Status); err != nil {
+			log.Fatal(err)
+		}
+
+		if anom.Status == 0 {
+
+			date := "2021-01-01"
+			accJlc := &Account{}
+			accBasic := make([]*Account, 0)
+
+			q, _ := db.Query("SELECT ACCOUNT_NUMBER, ACCOUNT_BRANCH, ACCOUNT_CATEGORY FROM ACCOUNT WHERE REGISTRATION_ID = '" + param.RegistrationId + "' AND ACCOUNT_SERVICE = 'JLC'")
+
+			for q.Next() {
+				acc := new(Account)
+				if err := q.Scan(&acc.Number, &acc.Branch, &acc.Category); err != nil {
+					log.Fatal(err)
+				}
+				accJlc = acc
+			}
+
+			q, _ = db.Query("SELECT ACCOUNT_NUMBER, ACCOUNT_BRANCH, ACCOUNT_CATEGORY FROM ACCOUNT WHERE REGISTRATION_ID = '" + param.RegistrationId + "'" +
+				"AND ACCOUNT_SERVICE = 'JLC' AND ACCOUNT_SERVICE != 'JLC' AND ACCOUNT_TRANSACTION = 'Y'")
+
+			for q.Next() {
+				acc := new(Account)
+				if err := q.Scan(&acc.Number, &acc.Branch, &acc.Category); err != nil {
+					log.Fatal(err)
+				}
+				accBasic = append(accBasic, acc)
+			}
+
+			// url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectData"
+
+			payload := &PayloadTrxDetail{
+				From: date,
+				Jlc: map[string]string{
+					"number": accJlc.Number,
+				},
+				Acc: accBasic,
+			}
+
+			fmt.Println(json.Marshal(payload))
+
+			// resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+
+		}
+	}
 
 	// today := time.Now()
 	// last3Month := today.AddDate(0, -3, 0)
@@ -837,7 +905,7 @@ func main() {
 
 		wg.Add(2)
 		go syncTransaction(ch, &wg, db, p)
-		go syncTransactionDetail(ch1, &wg, db)
+		go syncTransactionDetail(ch1, &wg, db, p)
 
 		// close the channel in the background
 		go func() {
