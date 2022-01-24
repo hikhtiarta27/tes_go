@@ -781,9 +781,8 @@ func updateSyncTable(db *sql.DB, param *param, status bool) {
 	q := db.QueryRow("SELECT REGISTRATION_ID, STATUS FROM SYNC_CONTINGENCY sc WHERE REGISTRATION_ID = '" + param.RegistrationId + "'")
 
 	if err := q.Scan(&sc.RegistrationId, &sc.Status); err != nil {
-		stmt, _ := db.Prepare("INSERT INTO SYNC_CONTINGENCY VALUES(?,?)")
 
-		_, err := stmt.Exec(param.RegistrationId, 0)
+		_, err := db.Exec("INSERT INTO SYNC_CONTINGENCY VALUES('" + param.RegistrationId + "',0)")
 
 		if err != nil {
 			fmt.Println("Insert sync")
