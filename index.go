@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -736,92 +737,71 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 		if anom.Status == 1 {
 
-			date := "2022-01-24"
-			accJlc := &Account{}
-			accBasic := make([]map[string]string, 0)
+			dateFrom, _ := time.Parse("2006-01-02", param.StartDate)
+			dateEnd, _ := time.Parse("2006-01-02", param.EndDate)
+			for d := dateFrom; !d.After(dateEnd); d = d.AddDate(0, 0, 1) {
 
-			q, _ := db.Query("SELECT ACCOUNT_NUMBER, ACCOUNT_BRANCH, ACCOUNT_CATEGORY FROM ACCOUNT WHERE REGISTRATION_ID = '" + param.RegistrationId + "' AND ACCOUNT_SERVICE = 'JLC'")
+				date := d.Format("2006-01-02")
+				accJlc := &Account{}
+				accBasic := make([]map[string]string, 0)
 
-			for q.Next() {
-				acc := new(Account)
-				if err := q.Scan(&acc.Number, &acc.Branch, &acc.Category); err != nil {
-					log.Fatal(err)
-				}
-				accJlc = acc
-			}
+				q, _ := db.Query("SELECT ACCOUNT_NUMBER, ACCOUNT_BRANCH, ACCOUNT_CATEGORY FROM ACCOUNT WHERE REGISTRATION_ID = '" + param.RegistrationId + "' AND ACCOUNT_SERVICE = 'JLC'")
 
-			q, _ = db.Query("SELECT ACCOUNT_NUMBER, ACCOUNT_BRANCH, ACCOUNT_CATEGORY FROM ACCOUNT WHERE REGISTRATION_ID = '" + param.RegistrationId + "' " +
-				"AND ACCOUNT_SERVICE != 'JLC' AND ACCOUNT_TRANSACTION = 'Y'")
-
-			for q.Next() {
-				acc := new(Account)
-				if err := q.Scan(&acc.Number, &acc.Branch, &acc.Category); err != nil {
-					log.Fatal(err)
-				}
-
-				b := acc.Branch
-
-				if acc.Category == "NA" {
-					b = "NA"
-				}
-
-				tmp := map[string]string{
-					"account": acc.Number,
-					"branch":  b,
-				}
-				accBasic = append(accBasic, tmp)
-			}
-
-			url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectData"
-
-			payload, _ := json.Marshal(&PayloadTrxDetail{
-				From: date,
-				Jlc: map[string]string{
-					// "number": accJlc.Number,
-					"number": "1009448221",
-				},
-				Acc: accBasic,
-			})
-
-			fmt.Println(accJlc.Number)
-
-			resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
-
-			r := ResponseTrxDetail{}
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			json.NewDecoder(resp.Body).Decode(&r)
-
-			for i := range r.Jlc {
-				awb := r.Jlc[i]
-
-				if awb.CNOTE_NO != "" {
-
-					procedureSql := reconstruct(&awb)
-					_, err = db.Exec(procedureSql)
-					success++
-
-					if err != nil {
-						failed++
+				for q.Next() {
+					acc := new(Account)
+					if err := q.Scan(&acc.Number, &acc.Branch, &acc.Category); err != nil {
 						log.Fatal(err)
-
 					}
-				} else {
-					failed++
+					accJlc = acc
 				}
-			}
 
-			for i := range r.Account {
-				x := r.Account
-				if len(x[i]) == 0 {
-					continue
+				q, _ = db.Query("SELECT ACCOUNT_NUMBER, ACCOUNT_BRANCH, ACCOUNT_CATEGORY FROM ACCOUNT WHERE REGISTRATION_ID = '" + param.RegistrationId + "' " +
+					"AND ACCOUNT_SERVICE != 'JLC' AND ACCOUNT_TRANSACTION = 'Y'")
+
+				for q.Next() {
+					acc := new(Account)
+					if err := q.Scan(&acc.Number, &acc.Branch, &acc.Category); err != nil {
+						log.Fatal(err)
+					}
+
+					b := acc.Branch
+
+					if acc.Category == "NA" {
+						b = "NA"
+					}
+
+					tmp := map[string]string{
+						"account": acc.Number,
+						"branch":  b,
+					}
+					accBasic = append(accBasic, tmp)
 				}
-				for j := range x[i] {
 
-					awb := x[i][j]
+				url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectData"
+
+				payload, _ := json.Marshal(&PayloadTrxDetail{
+					From: date,
+					Jlc: map[string]string{
+						// "number": accJlc.Number,
+						"number": "1009448221",
+					},
+					Acc: accBasic,
+				})
+
+				fmt.Println(accJlc.Number)
+
+				resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+
+				r := ResponseTrxDetail{}
+
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				json.NewDecoder(resp.Body).Decode(&r)
+
+				for i := range r.Jlc {
+					awb := r.Jlc[i]
 
 					if awb.CNOTE_NO != "" {
 
@@ -838,8 +818,33 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 						failed++
 					}
 				}
-			}
 
+				for i := range r.Account {
+					x := r.Account
+					if len(x[i]) == 0 {
+						continue
+					}
+					for j := range x[i] {
+
+						awb := x[i][j]
+
+						if awb.CNOTE_NO != "" {
+
+							procedureSql := reconstruct(&awb)
+							_, err = db.Exec(procedureSql)
+							success++
+
+							if err != nil {
+								failed++
+								log.Fatal(err)
+
+							}
+						} else {
+							failed++
+						}
+					}
+				}
+			}
 		}
 	}
 
