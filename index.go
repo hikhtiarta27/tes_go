@@ -60,8 +60,8 @@ type PayloadTrxDetail struct {
 }
 
 type ResponseTrxDetail struct {
-	Jlc     []interface{}
-	Account [][]interface{}
+	Jlc     []AWBDetail
+	Account [][]AWBDetail
 }
 
 type AWBDetail struct {
