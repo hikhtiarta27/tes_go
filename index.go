@@ -56,7 +56,7 @@ type Account struct {
 type PayloadTrxDetail struct {
 	From string      `json:"from"`
 	Jlc  interface{} `json:"jlc"`
-	Acc  []*Account  `json:"acc"`
+	Acc  interface{} `json:"acc"`
 }
 
 type AWBDetail struct {
@@ -733,7 +733,7 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 
 			date := "2021-01-01"
 			accJlc := &Account{}
-			accBasic := make([]*Account, 0)
+			accBasic := make([]map[string]string, 0)
 
 			q, _ := db.Query("SELECT ACCOUNT_NUMBER, ACCOUNT_BRANCH, ACCOUNT_CATEGORY FROM ACCOUNT WHERE REGISTRATION_ID = '" + param.RegistrationId + "' AND ACCOUNT_SERVICE = 'JLC'")
 
@@ -753,22 +753,37 @@ func syncTransactionDetail(ch chan<- map[string]int, wg *sync.WaitGroup, db *sql
 				if err := q.Scan(&acc.Number, &acc.Branch, &acc.Category); err != nil {
 					log.Fatal(err)
 				}
-				accBasic = append(accBasic, acc)
+
+				b := acc.Branch
+
+				if acc.Category == "NA" {
+					b = "NA"
+				}
+
+				tmp := map[string]string{
+					"account": acc.Number,
+					"branch":  b,
+				}
+				accBasic = append(accBasic, tmp)
 			}
 
-			// url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectData"
+			url := "http://apilazada.jne.co.id:8889/tracing/cs3new/selectData"
 
-			payload := &PayloadTrxDetail{
+			payload, _ := json.Marshal(&PayloadTrxDetail{
 				From: date,
 				Jlc: map[string]string{
 					"number": accJlc.Number,
 				},
 				Acc: accBasic,
+			})
+
+			resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+
+			if err != nil {
+				log.Fatal(err)
 			}
 
-			fmt.Println(json.Marshal(payload))
-
-			// resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+			fmt.Println(resp)
 
 		}
 	}
